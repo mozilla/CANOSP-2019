@@ -160,8 +160,6 @@ def _all_users_have_at_least_n_unique_lables(data):
 
 
 def _add_evenly_distributed_values_to_data(df, g_prms, num_items, field_name):
-    num_samples_per_value = g_prms.num_samples // num_items
-
-    new_field = [i // num_samples_per_value for i in range(0, g_prms.num_samples)]
+    new_field = [i % num_items for i in range(1, g_prms.num_samples + 1)] # Avoid div by 0
     df[field_name] = new_field
 
