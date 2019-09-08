@@ -22,8 +22,7 @@ def generate_blob_data(g_prms):
     Note that labels/species are interchangeable.
     Returns: The features and labels generated (see file header for format)
     """
-    df = _gen_data_and_add_user_data(_gen_blob_data, g_prms)
-    return _transform_data_for_simulator_format(df, g_prms)
+    return _gen_data_and_add_user_data(_gen_blob_data, g_prms)
 
 
 def generate_random_data(g_prms):
@@ -32,8 +31,21 @@ def generate_random_data(g_prms):
     Note that labels/species are interchangeable.
     Returns: The features and labels generated (see file header for format)
     """
-    df = _gen_data_and_add_user_data(_gen_random_data, g_prms)
-    return _transform_data_for_simulator_format(df, g_prms)
+    return _gen_data_and_add_user_data(_gen_random_data, g_prms)
+
+
+def transform_data_for_simulator_format(df, g_prms):
+    labels = []
+    feats = []
+    for i in range(g_prms.num_users):
+        client_df = df[df.user_id == i]
+        labels.append(list(client_df.labels))
+        client_feats = client_df.drop(columns=["user_id", "labels"]).to_records(
+            index=False
+        )
+        feats.append(list(client_feats))
+
+    return (labels, feats)
 
 
 def _gen_blob_data(g_prms):
@@ -103,19 +115,6 @@ def _gen_data_and_add_user_data(data_gen_func, g_prms):
         gen_and_add_users_func, _all_users_have_at_least_n_unique_lables
     )
 
-
-def _transform_data_for_simulator_format(df, g_prms):
-    labels = []
-    feats = []
-    for i in range(g_prms.num_users):
-        client_df = df[df.user_id == i]
-        labels.append(list(client_df.labels))
-        client_feats = client_df.drop(columns=["user_id", "labels"]).to_records(
-            index=False
-        )
-        feats.append(list(client_feats))
-
-    return (labels, feats)
 
 
 def _gen_data_and_add_user_data(data_gen_func, g_prms):
