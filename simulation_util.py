@@ -52,8 +52,7 @@ def append(list, element):
     """
     return np.concatenate((list, [element])) if list is not None else [element]
 
-def server_update(init_weight,client_fraction,num_rounds,features,labels,epoch,batch_size,display_weight_per_round):
-    
+def server_update(init_weight, client_fraction, num_rounds, features, labels, epoch, batch_size, display_weight_per_round):
     """
     Calls clientUpdate to get the updated weights from clients, and applies Federated
     Averaging Algorithm to update the weight on server side
