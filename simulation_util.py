@@ -2,6 +2,7 @@ from sklearn.linear_model import SGDClassifier
 import numpy as np
 import random
 
+
 def client_update(init_weights, epochs, batch_size, features, labels):
     """
     Given the previous weights from the server, it does updates on the model
@@ -46,14 +47,24 @@ def client_update(init_weights, epochs, batch_size, features, labels):
 
     return weights
 
+
 def append(list, element):
     """
     helper function to append array into array in numpy
     """
     return np.concatenate((list, [element])) if list is not None else [element]
 
-def server_update(init_weight,client_fraction,num_rounds,features,labels,epoch,batch_size,display_weight_per_round):
-    
+
+def server_update(
+    init_weight,
+    client_fraction,
+    num_rounds,
+    features,
+    labels,
+    epoch,
+    batch_size,
+    display_weight_per_round,
+):
     """
     Calls clientUpdate to get the updated weights from clients, and applies Federated
     Averaging Algorithm to update the weight on server side
@@ -82,18 +93,21 @@ def server_update(init_weight,client_fraction,num_rounds,features,labels,epoch,b
     # use to generate n_k so that the sum of n_k equals to n
     for i in range(num_rounds):
         # calculate the number of clients used in this round
-        m = max(int(client_num*C),1)
+        m = max(int(client_num * C), 1)
         # random set of m client's index
         S = np.array(random.sample(range(client_num), client_num))
-        
+
         num_samples = []
-            
+
         # grab all the weights from clients
-        client_weights = None   
+        client_weights = None
         for i in S:
             client_feature = features[i]
             client_label = labels[i]
-            client_weights = append(client_weights,client_update(w,epoch,batch_size,client_feature,client_label))         
+            client_weights = append(
+                client_weights,
+                client_update(w, epoch, batch_size, client_feature, client_label),
+            )
             num_samples.append(len(client_feature))
 
         # calculate the new server weight based on new weights coming from client
@@ -101,20 +115,22 @@ def server_update(init_weight,client_fraction,num_rounds,features,labels,epoch,b
         for i in range(len(client_weights)):
             current_weight = client_weights[i]
             n_k = len(features[i])
-            added_w = [value*(n_k)/sum(num_samples) for value in current_weight]
-            
-            new_w = np.add(new_w,added_w)
-        
+            added_w = [value * (n_k) / sum(num_samples) for value in current_weight]
+
+            new_w = np.add(new_w, added_w)
+
         # update the server weight to newly calculated weight
         w = new_w
-        
+
         if display_weight_per_round:
             print(w)
-            
-    # load properties and intercept into the classifier
-    clf = SGDClassifier()
-    clf.coef_ = w[:-1]
+
+    # load coefficients and intercept into the classifier
+    clf = SGDClassifier(loss="hinge", penalty="l2")
+    clf.coef_ = w[:-1].reshape(1, -1)
     clf.intercept_ = w[-1]
-    clf.classes_ = labels
-    
+    clf.classes_ = np.unique(
+        list(labels)
+    )  # the unique labels are the classes for the classifier
+
     return clf
