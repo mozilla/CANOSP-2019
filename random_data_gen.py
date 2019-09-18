@@ -1,3 +1,7 @@
+# Simple set of functions to generate different types of random data
+# To see how these functions are intended to be called, take a look through "Data Generation Prototype.ipynb".
+
+
 import numpy as np
 import pandas as pd
 import sklearn as skl
@@ -9,6 +13,14 @@ USERS_MIN_UNIQUE_LABELS = 2
 
 
 class InputGenParams:
+    """
+    This is just used to nicely pass around generation parameters between functions.
+    samples --> Total number of data points to generate
+    labels --> Number of labels (species) groups to be generated. Evenly distributed.
+    features --> Number of features per entry
+    users --> How many unique users are in the genereated data. Evenly distributed.
+    """
+
     def __init__(self, num_samples, num_labels, num_features, num_users):
         self.num_samples = num_samples
         self.num_labels = num_labels
@@ -19,8 +31,7 @@ class InputGenParams:
 def generate_blob_data(g_prms):
     """
     Generates blob data, or data points that tend to cluster around a point for each label.
-    Note that labels/species are interchangeable.
-    Returns: The features and labels generated (see file header for format)
+    Returns: A Pandas DataFrame containing the generated records (see notebook for specific format)
     """
     return _gen_data_and_add_user_data(_gen_blob_data, g_prms)
 
@@ -28,13 +39,16 @@ def generate_blob_data(g_prms):
 def generate_random_data(g_prms):
     """
     Generates random data where features should have no correlation.
-    Note that labels/species are interchangeable.
-    Returns: The features and labels generated (see file header for format)
+    Returns: A Pandas DataFrame containing the generated records (see notebook for specific format)
     """
     return _gen_data_and_add_user_data(_gen_random_data, g_prms)
 
 
 def transform_data_for_simulator_format(df, g_prms):
+    """
+    Transforms a Pandas DataFrame returned by the generation functions into a format that is usable by the simulator.
+    See notebook for the specific format.
+    """
     labels = []
     feats = []
     for i in range(g_prms.num_users):
@@ -116,7 +130,6 @@ def _gen_data_and_add_user_data(data_gen_func, g_prms):
     )
 
 
-
 def _gen_data_and_add_user_data(data_gen_func, g_prms):
     def gen_and_add_users_func():
         data = data_gen_func(g_prms)
@@ -159,6 +172,7 @@ def _all_users_have_at_least_n_unique_lables(data):
 
 
 def _add_evenly_distributed_values_to_data(df, g_prms, num_items, field_name):
-    new_field = [i % num_items for i in range(1, g_prms.num_samples + 1)] # Avoid div by 0
+    new_field = [
+        i % num_items for i in range(1, g_prms.num_samples + 1)
+    ]  # Avoid div by 0
     df[field_name] = new_field
-
