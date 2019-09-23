@@ -1,17 +1,17 @@
-SIM_TYPE_FED_LEARNING = 0
+import random_data_gen
+import sim_run_funcs
 
-DATA_GEN_TYPE_REAL_DATA = 0
-DATA_GEN_TYPE_BLOB = 1
-DATA_GEN_TYPE_RAND = 2
+SIM_TYPE_FED_LEARNING = "fed_learning"
+SIM_TYPE_FED_AVG_WITH_DP = "fed_avg_with_dp"
+
+DATA_GEN_TYPE_REAL_DATA = "real_data"
+DATA_GEN_TYPE_BLOB = "data_gen_blob"
+DATA_GEN_TYPE_RAND = "data_gen_rand"
 
 P_KEY_NUM_SAMPLES = "num_samples"
 P_KEY_NUM_LABELS = "num_labels"
 P_KEY_NUM_FEATURES = "num_features"
 P_KEY_NUM_USERS = "num_users"
-
-
-def run_data_gen_blob(sim_params):
-    pass
 
 
 class RunFuncAndReqParams:
@@ -21,12 +21,20 @@ class RunFuncAndReqParams:
 
 
 run_func_ltable = {
+    SIM_TYPE_FED_LEARNING: RunFuncAndReqParams(
+        sim_run_funcs.run_fed_learn_sim,
+        {P_KEY_NUM_SAMPLES, P_KEY_NUM_FEATURES, P_KEY_NUM_USERS},
+    ),
+    SIM_TYPE_FED_AVG_WITH_DP: RunFuncAndReqParams(
+        sim_run_funcs.run_fed_avg_with_dp,
+        {P_KEY_NUM_SAMPLES, P_KEY_NUM_LABELS, P_KEY_NUM_FEATURES, P_KEY_NUM_USERS},
+    ),
     DATA_GEN_TYPE_BLOB: RunFuncAndReqParams(
-        run_data_gen_blob,
+        sim_run_funcs.run_data_gen_blob,
         {P_KEY_NUM_SAMPLES, P_KEY_NUM_LABELS, P_KEY_NUM_FEATURES, P_KEY_NUM_USERS},
     ),
     DATA_GEN_TYPE_RAND: RunFuncAndReqParams(
-        run_data_gen_blob,
+        sim_run_funcs.run_data_gen_blob,
         {P_KEY_NUM_SAMPLES, P_KEY_NUM_LABELS, P_KEY_NUM_FEATURES, P_KEY_NUM_USERS},
     ),
 }
