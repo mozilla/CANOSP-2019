@@ -14,7 +14,7 @@ def run_data_gen_blob(s_prms):
         s_prms[simulation.P_KEY_NUM_USERS],
     )
     rand_data = random_data_gen.generate_blob_data(g_prms)
-    return random_data_gen.transform_data_for_simulator_format(rand_data)
+    return random_data_gen.transform_data_for_simulator_format(rand_data, g_prms)
 
 
 def run_fed_learn_sim(s_prms, data):

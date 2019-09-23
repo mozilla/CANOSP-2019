@@ -17,7 +17,7 @@ P_KEY_NUM_USERS = "num_users"
 class RunFuncAndReqParams:
     def __init__(self, run_func, prereq_check_func):
         self.run_func = run_func
-        self.prereq_check_func = prereq_check_func
+        self.prereq_params = prereq_check_func
 
 
 run_func_ltable = {
@@ -42,23 +42,23 @@ run_func_ltable = {
 
 class Simulation:
     def __init__(self):
-        self.params = {}
+        self._params = {}
 
     def run(self, sim_type, data_gen_type):
         sim_run_info = run_func_ltable[sim_type]
         data_gen_run_info = run_func_ltable[data_gen_type]
 
-        if not self._sim_has_required_params_for_given_run_func(sim_type):
+        if not self._sim_has_required_params_for_given_run_func(sim_run_info.prereq_params, sim_type):
             return
 
-        if not self._sim_has_required_params_for_given_run_func(data_gen_type):
+        if not self._sim_has_required_params_for_given_run_func(sim_run_info.prereq_params, data_gen_type):
             return
 
         print('Generating "{}" data...'.format(data_gen_type))
-        generated_data = data_gen_run_info.run_func(self.params)
+        generated_data = data_gen_run_info.run_func(self._params)
 
         print('Runing the "{}" simulation...'.format(sim_type))
-        sim_run_info.run_func(self.params, generated_data)
+        sim_run_info.run_func(self._params, generated_data)
 
         print("Finished!")
 
@@ -75,13 +75,13 @@ class Simulation:
         return self._set_param(P_KEY_NUM_USERS, num_users)
 
     def _set_param(self, p_key, val):
-        self.param[p_key] = val
+        self._params[p_key] = val
         return self
 
     def _sim_has_required_params_for_given_run_func(
         self, run_func_params, run_func_key
     ):
-        missing_req_params = run_func_params.difference(self.params)
+        missing_req_params = run_func_params.difference(self._params)
 
         if len(missing_req_params) != 0:
             print(
