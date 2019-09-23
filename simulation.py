@@ -1,4 +1,3 @@
-import random_data_gen
 import sim_run_funcs
 
 SIM_TYPE_FED_LEARNING = "fed_learning"
@@ -34,7 +33,7 @@ run_func_ltable = {
         {P_KEY_NUM_SAMPLES, P_KEY_NUM_LABELS, P_KEY_NUM_FEATURES, P_KEY_NUM_USERS},
     ),
     DATA_GEN_TYPE_RAND: RunFuncAndReqParams(
-        sim_run_funcs.run_data_gen_blob,
+        sim_run_funcs.run_data_gen_rand,
         {P_KEY_NUM_SAMPLES, P_KEY_NUM_LABELS, P_KEY_NUM_FEATURES, P_KEY_NUM_USERS},
     ),
 }
@@ -48,10 +47,14 @@ class Simulation:
         sim_run_info = run_func_ltable[sim_type]
         data_gen_run_info = run_func_ltable[data_gen_type]
 
-        if not self._sim_has_required_params_for_given_run_func(sim_run_info.prereq_params, sim_type):
+        if not self._sim_has_required_params_for_given_run_func(
+            sim_run_info.prereq_params, sim_type
+        ):
             return
 
-        if not self._sim_has_required_params_for_given_run_func(sim_run_info.prereq_params, data_gen_type):
+        if not self._sim_has_required_params_for_given_run_func(
+            sim_run_info.prereq_params, data_gen_type
+        ):
             return
 
         print('Generating "{}" data...'.format(data_gen_type))
