@@ -7,13 +7,22 @@ import numpy as np
 
 
 def run_data_gen_blob(s_prms):
+    return _run_gen_func(s_prms, random_data_gen.generate_blob_data)
+
+
+def run_data_gen_rand(s_prms):
+    return _run_gen_func(s_prms, random_data_gen.generate_blob_data)
+
+
+# Blob and rand are called identically, so it makes sense to wrap this in a func
+def _run_gen_func(s_prms, gen_func):
     g_prms = random_data_gen.InputGenParams(
         s_prms[simulation.P_KEY_NUM_SAMPLES],
         s_prms[simulation.P_KEY_NUM_LABELS],
         s_prms[simulation.P_KEY_NUM_FEATURES],
         s_prms[simulation.P_KEY_NUM_USERS],
     )
-    rand_data = random_data_gen.generate_blob_data(g_prms)
+    rand_data = gen_func(g_prms)
     return random_data_gen.transform_data_for_simulator_format(rand_data, g_prms)
 
 
