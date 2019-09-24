@@ -26,9 +26,9 @@ def client_update(init_weights, epochs, batch_size, features, labels):
     for i in range(0, len(features), batch_size):
         batches_features.append(features[i : i + batch_size])
         batches_labels.append(labels[i : i + batch_size])
-        # TODO: merge the features and labels into one tuple?
 
-    weights = list(init_weights)
+    coef = list(init_weights[0])
+    intercept = list(init_weights[1])
 
     # set max_iter to 1 so that each .fit() call only does one training step
     classifier = SGDClassifier(loss="hinge", penalty="l2", max_iter=1)
@@ -38,12 +38,15 @@ def client_update(init_weights, epochs, batch_size, features, labels):
             classifier.fit(
                 batches_features[i],
                 batches_labels[i],
-                coef_init=weights[:-1],
-                intercept_init=weights[-1],
+                coef_init=coef,
+                intercept_init=intercept,
             )
 
             # update the weights so for the next batch the new ones are used
-            weights = np.append(classifier.coef_[0], classifier.intercept_)
+            coef = classifier.coef_
+            intercept = classifier.intercept_
+
+    weights = [coef, intercept]
 
     return weights
 
@@ -84,7 +87,13 @@ def server_update(
     """
 
     # initialize the weight
-    w = init_weight
+    # w = init_weight
+
+    coef = list(init_weight[0])
+    intercept = list(init_weight[1])
+
+    print("Old: ", coef, intercept)
+    # print(w)
     # number of clients
     client_num = len(features)
     # fraction of clients
@@ -101,34 +110,55 @@ def server_update(
 
         # grab all the weights from clients
         client_weights = None
+        client_intercept = None
+
         for i in S:
             client_feature = features[i]
             client_label = labels[i]
+
+            weights, intercept = client_update([coef, intercept], epoch, batch_size, client_feature, client_label)
+
             client_weights = append(
                 client_weights,
-                client_update(w, epoch, batch_size, client_feature, client_label),
+                weights,
             )
+
+            client_intercept = append(
+                client_intercept,
+                intercept
+            )
+
             num_samples.append(len(client_feature))
 
         # calculate the new server weight based on new weights coming from client
-        new_w = np.zeros(len(w))
+        new_coefs = np.zeros(init_weight[0].shape, dtype=np.float64, order="C")
+        new_intercept = np.zeros(init_weight[1].shape, dtype=np.float64, order="C")
+        
         for i in range(len(client_weights)):
             current_weight = client_weights[i]
+            current_intercept = client_intercept[i]
+
             n_k = len(features[i])
             added_w = [value * (n_k) / sum(num_samples) for value in current_weight]
+            added_i = [value * (n_k) / sum(num_samples) for value in current_intercept]
 
-            new_w = np.add(new_w, added_w)
+            new_coefs = np.add(new_coefs, added_w)
+            new_intercept = np.add(new_intercept, added_i)
 
         # update the server weight to newly calculated weight
-        w = new_w
+        # w = new_w
+        coef = new_coefs
+        intercept = new_intercept
 
+        print("New: ", coef, intercept)
         if display_weight_per_round:
-            print(w)
+            print("New: ", coef, intercept)
 
     # load coefficients and intercept into the classifier
     clf = SGDClassifier(loss="hinge", penalty="l2")
-    clf.coef_ = w[:-1].reshape(1, -1)
-    clf.intercept_ = w[-1]
+
+    clf.coef_ = new_coefs
+    clf.intercept_ = new_intercept
     clf.classes_ = np.unique(
         list(labels)
     )  # the unique labels are the classes for the classifier
