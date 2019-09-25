@@ -9,7 +9,7 @@ def client_update(init_weights, epochs, batch_size, features, labels):
     and returns the new set of weights
 
     init_weights: weights to initialize the training with 
-        ex: [coef1, coef2, ..., coefn, intercept]
+        ex: [weights of size num_classes*num_features, intercepts of size num_classes]
     epochs: number of epochs to run the training for 
     batch_size: the size of each batch of data while training 
     features: a 2D array containing features for each sample 
@@ -73,7 +73,7 @@ def server_update(
     Averaging Algorithm to update the weight on server side
     
     init_weights: weights to initialize the training with 
-        ex: [coef1, coef2, ..., coefn, intercept]
+        ex: [weights of size num_classes*num_features, intercepts of size num_classes]
     client_fraction: fraction of clients to use per round 
     num_rounds: number of rounds used to update the weight
     features: a 3D array containing features for each sample 
@@ -86,14 +86,10 @@ def server_update(
     
     """
 
-    # initialize the weight
-    # w = init_weight
-
+    # initialize the weights
     coef = list(init_weight[0])
     intercept = list(init_weight[1])
 
-    print("Old: ", coef, intercept)
-    # print(w)
     # number of clients
     client_num = len(features)
     # fraction of clients
@@ -109,18 +105,18 @@ def server_update(
         num_samples = []
 
         # grab all the weights from clients
-        client_weights = None
+        client_coefs = None
         client_intercept = None
 
         for i in S:
             client_feature = features[i]
             client_label = labels[i]
 
-            weights, intercept = client_update([coef, intercept], epoch, batch_size, client_feature, client_label)
+            coefs, intercept = client_update([coef, intercept], epoch, batch_size, client_feature, client_label)
 
-            client_weights = append(
-                client_weights,
-                weights,
+            client_coefs = append(
+                client_coefs,
+                coefs,
             )
 
             client_intercept = append(
@@ -130,29 +126,27 @@ def server_update(
 
             num_samples.append(len(client_feature))
 
-        # calculate the new server weight based on new weights coming from client
+        # calculate the new server weights based on new weights coming from client
         new_coefs = np.zeros(init_weight[0].shape, dtype=np.float64, order="C")
         new_intercept = np.zeros(init_weight[1].shape, dtype=np.float64, order="C")
         
-        for i in range(len(client_weights)):
-            current_weight = client_weights[i]
+        for i in range(len(client_coefs)):
+            current_coef = client_coefs[i]
             current_intercept = client_intercept[i]
 
             n_k = len(features[i])
-            added_w = [value * (n_k) / sum(num_samples) for value in current_weight]
+            added_w = [value * (n_k) / sum(num_samples) for value in current_coef]
             added_i = [value * (n_k) / sum(num_samples) for value in current_intercept]
 
             new_coefs = np.add(new_coefs, added_w)
             new_intercept = np.add(new_intercept, added_i)
 
-        # update the server weight to newly calculated weight
-        # w = new_w
+        # update the server weights to newly calculated weights
         coef = new_coefs
         intercept = new_intercept
 
-        print("New: ", coef, intercept)
         if display_weight_per_round:
-            print("New: ", coef, intercept)
+            print("Updated Weights: ", coef, intercept)
 
     # load coefficients and intercept into the classifier
     clf = SGDClassifier(loss="hinge", penalty="l2")
