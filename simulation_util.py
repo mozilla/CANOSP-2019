@@ -106,7 +106,7 @@ def server_update(
 
         # grab all the weights from clients
         client_coefs = None
-        client_intercept = None
+        client_intercepts = None
 
         for i in S:
             client_feature = features[i]
@@ -119,8 +119,8 @@ def server_update(
                 coefs,
             )
 
-            client_intercept = append(
-                client_intercept,
+            client_intercepts = append(
+                client_intercepts,
                 intercept
             )
 
@@ -132,7 +132,7 @@ def server_update(
         
         for i in range(len(client_coefs)):
             client_coef = client_coefs[i]
-            client_intercept = client_intercept[i]
+            client_intercept = client_intercepts[i]
 
             n_k = len(features[i])
             added_coef = [value * (n_k) / sum(num_samples) for value in client_coef]
