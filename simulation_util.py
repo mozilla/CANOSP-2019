@@ -131,15 +131,15 @@ def server_update(
         new_intercept = np.zeros(init_weight[1].shape, dtype=np.float64, order="C")
         
         for i in range(len(client_coefs)):
-            current_coef = client_coefs[i]
-            current_intercept = client_intercept[i]
+            client_coef = client_coefs[i]
+            client_intercept = client_intercept[i]
 
             n_k = len(features[i])
-            added_w = [value * (n_k) / sum(num_samples) for value in current_coef]
-            added_i = [value * (n_k) / sum(num_samples) for value in current_intercept]
+            added_coef = [value * (n_k) / sum(num_samples) for value in client_coef]
+            added_intercept = [value * (n_k) / sum(num_samples) for value in client_intercept]
 
-            new_coefs = np.add(new_coefs, added_w)
-            new_intercept = np.add(new_intercept, added_i)
+            new_coefs = np.add(new_coefs, added_coef)
+            new_intercept = np.add(new_intercept, added_intercept)
 
         # update the server weights to newly calculated weights
         coef = new_coefs
