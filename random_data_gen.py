@@ -52,12 +52,16 @@ def transform_data_for_simulator_format(df, g_prms):
     labels = []
     feats = []
     for i in range(g_prms.num_users):
-        client_df = df[df.user_id == i]
+        client_df = df[df.user_id == i].drop(df.columns[0], axis=1)
         labels.append(list(client_df.labels))
         client_feats = client_df.drop(columns=["user_id", "labels"]).to_records(
             index=False
         )
-        feats.append(list(client_feats))
+        
+        # convert tuples to lists
+        client_feats = [list(feat) for feat in client_feats]
+        
+        feats.append(client_feats)
 
     return (labels, feats)
 
