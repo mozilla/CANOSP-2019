@@ -83,6 +83,9 @@ class Simulation:
     def set_num_users(self, num_users):
         return self._set_param(P_KEY_NUM_USERS, num_users)
 
+    def set_read_data_file_path(self, file_path):
+        return self._set_param(P_KEY_DATA_FILE_PATH, file_path)
+
     def _set_param(self, p_key, val):
         self._params[p_key] = val
         return self
