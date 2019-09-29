@@ -66,7 +66,7 @@ class Simulation:
         print('Generating "{}" data...'.format(data_gen_type))
         generated_data = data_gen_run_info.run_func(self._params)
 
-        print('Runing the "{}" simulation...'.format(sim_type))
+        print('Running the "{}" simulation...'.format(sim_type))
         sim_run_info.run_func(self._params, generated_data)
 
         print("Finished!")
