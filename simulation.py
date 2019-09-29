@@ -108,7 +108,7 @@ class Simulation:
             )
 
             for missing_p in missing_req_params:
-                print(missing_p)
+                print("- {}".format(missing_p))
 
             return False
         return True
