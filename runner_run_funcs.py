@@ -1,4 +1,4 @@
-import simulation
+import runner
 import random_data_gen
 import pandas as pd
 from simulation_util import client_update, server_update
@@ -23,7 +23,7 @@ def _run_gen_func(s_prms, gen_func):
 
 
 def read_data_from_file(s_prms):
-    file_path = s_prms[simulation.P_KEY_DATA_FILE_PATH]
+    file_path = s_prms[runner.P_KEY_DATA_FILE_PATH]
     df = pd.read_csv(file_path)
 
     g_prms = create_g_params_from_s_params(s_prms)
@@ -32,19 +32,19 @@ def read_data_from_file(s_prms):
 
 def create_g_params_from_s_params(s_prms):
     return random_data_gen.InputGenParams(
-        s_prms[simulation.P_KEY_NUM_SAMPLES],
-        s_prms[simulation.P_KEY_NUM_LABELS],
-        s_prms[simulation.P_KEY_NUM_FEATURES],
-        s_prms[simulation.P_KEY_NUM_USERS],
+        s_prms[runner.P_KEY_NUM_SAMPLES],
+        s_prms[runner.P_KEY_NUM_LABELS],
+        s_prms[runner.P_KEY_NUM_FEATURES],
+        s_prms[runner.P_KEY_NUM_USERS],
     )
 
 
 def run_fed_learn_sim(s_prms, data):
-    num_labels = s_prms[simulation.P_KEY_NUM_LABELS]
-    num_features = s_prms[simulation.P_KEY_NUM_FEATURES]
-    num_rounds = s_prms[simulation.P_KEY_NUM_ROUNDS]
-    batch_size = s_prms[simulation.P_KEY_BATCH_SIZE]
-    num_epochs = s_prms[simulation.P_KEY_NUM_EPOCHS]
+    num_labels = s_prms[runner.P_KEY_NUM_LABELS]
+    num_features = s_prms[runner.P_KEY_NUM_FEATURES]
+    num_rounds = s_prms[runner.P_KEY_NUM_ROUNDS]
+    batch_size = s_prms[runner.P_KEY_BATCH_SIZE]
+    num_epochs = s_prms[runner.P_KEY_NUM_EPOCHS]
 
     # Note: data is already transformed for sim format
 

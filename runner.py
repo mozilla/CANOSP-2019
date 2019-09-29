@@ -1,4 +1,4 @@
-import sim_run_funcs
+import runner_run_funcs
 
 SIM_TYPE_FED_LEARNING = "fed_learning"
 SIM_TYPE_FED_AVG_WITH_DP = "fed_avg_with_dp"
@@ -27,7 +27,7 @@ class RunFuncAndReqParams:
 
 run_func_ltable = {
     SIM_TYPE_FED_LEARNING: RunFuncAndReqParams(
-        sim_run_funcs.run_fed_learn_sim,
+        runner_run_funcs.run_fed_learn_sim,
         {
             P_KEY_NUM_ROUNDS,
             P_KEY_BATCH_SIZE,
@@ -38,10 +38,10 @@ run_func_ltable = {
         },
     ),
     SIM_TYPE_FED_AVG_WITH_DP: RunFuncAndReqParams(
-        sim_run_funcs.run_fed_avg_with_dp, {P_KEY_NUM_LABELS, P_KEY_NUM_FEATURES}
+        runner_run_funcs.run_fed_avg_with_dp, {P_KEY_NUM_LABELS, P_KEY_NUM_FEATURES}
     ),
     DATA_GEN_TYPE_DATA_FROM_FILE: RunFuncAndReqParams(
-        sim_run_funcs.read_data_from_file,
+        runner_run_funcs.read_data_from_file,
         {
             P_KEY_NUM_SAMPLES,
             P_KEY_NUM_LABELS,
@@ -51,17 +51,17 @@ run_func_ltable = {
         },
     ),
     DATA_GEN_TYPE_BLOB: RunFuncAndReqParams(
-        sim_run_funcs.run_data_gen_blob,
+        runner_run_funcs.run_data_gen_blob,
         {P_KEY_NUM_SAMPLES, P_KEY_NUM_LABELS, P_KEY_NUM_FEATURES, P_KEY_NUM_USERS},
     ),
     DATA_GEN_TYPE_RAND: RunFuncAndReqParams(
-        sim_run_funcs.run_data_gen_rand,
+        runner_run_funcs.run_data_gen_rand,
         {P_KEY_NUM_SAMPLES, P_KEY_NUM_LABELS, P_KEY_NUM_FEATURES, P_KEY_NUM_USERS},
     ),
 }
 
 
-class Simulation:
+class Runner:
     def __init__(self):
         self._params = {}
 
