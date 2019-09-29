@@ -3,9 +3,11 @@ import sim_run_funcs
 SIM_TYPE_FED_LEARNING = "fed_learning"
 SIM_TYPE_FED_AVG_WITH_DP = "fed_avg_with_dp"
 
-DATA_GEN_TYPE_REAL_DATA = "real_data"
+DATA_GEN_TYPE_DATA_FROM_FILE = "file_data"
 DATA_GEN_TYPE_BLOB = "data_gen_blob"
 DATA_GEN_TYPE_RAND = "data_gen_rand"
+
+P_KEY_DATA_FILE_PATH = "data_file_path"
 
 P_KEY_NUM_SAMPLES = "num_samples"
 P_KEY_NUM_LABELS = "num_labels"
@@ -27,6 +29,10 @@ run_func_ltable = {
     SIM_TYPE_FED_AVG_WITH_DP: RunFuncAndReqParams(
         sim_run_funcs.run_fed_avg_with_dp,
         {P_KEY_NUM_SAMPLES, P_KEY_NUM_LABELS, P_KEY_NUM_FEATURES, P_KEY_NUM_USERS},
+    ),
+    DATA_GEN_TYPE_DATA_FROM_FILE: RunFuncAndReqParams(
+        sim_run_funcs.read_data_from_file,
+        {P_KEY_DATA_FILE_PATH}
     ),
     DATA_GEN_TYPE_BLOB: RunFuncAndReqParams(
         sim_run_funcs.run_data_gen_blob,

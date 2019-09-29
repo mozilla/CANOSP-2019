@@ -1,5 +1,6 @@
 import simulation
 import random_data_gen
+import pandas as pd
 from simulation_util import client_update, server_update
 
 from sklearn.model_selection import ParameterGrid, train_test_split
@@ -16,14 +17,23 @@ def run_data_gen_rand(s_prms):
 
 # Blob and rand are called identically, so it makes sense to wrap this in a func
 def _run_gen_func(s_prms, gen_func):
-    g_prms = random_data_gen.InputGenParams(
+    g_prms = create_g_params_from_s_params(s_prms)
+    rand_data = gen_func(g_prms)
+    return random_data_gen.transform_data_for_simulator_format(rand_data, g_prms)
+
+
+def read_data_from_file(s_prms):
+    file_path = s_prms[simulation.P_KEY_DATA_FILE_PATH]
+    return pd.read_csv(file_path)
+
+
+def create_g_params_from_s_params(s_prms):
+    return random_data_gen.InputGenParams(
         s_prms[simulation.P_KEY_NUM_SAMPLES],
         s_prms[simulation.P_KEY_NUM_LABELS],
         s_prms[simulation.P_KEY_NUM_FEATURES],
         s_prms[simulation.P_KEY_NUM_USERS],
     )
-    rand_data = gen_func(g_prms)
-    return random_data_gen.transform_data_for_simulator_format(rand_data, g_prms)
 
 
 def run_fed_learn_sim(s_prms, data):
