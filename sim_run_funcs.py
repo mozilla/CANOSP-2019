@@ -24,7 +24,10 @@ def _run_gen_func(s_prms, gen_func):
 
 def read_data_from_file(s_prms):
     file_path = s_prms[simulation.P_KEY_DATA_FILE_PATH]
-    return pd.read_csv(file_path)
+    df = pd.read_csv(file_path)
+
+    g_prms = create_g_params_from_s_params(s_prms)
+    return random_data_gen.transform_data_for_simulator_format(df, g_prms)
 
 
 def create_g_params_from_s_params(s_prms):
