@@ -14,6 +14,10 @@ P_KEY_NUM_LABELS = "num_labels"
 P_KEY_NUM_FEATURES = "num_features"
 P_KEY_NUM_USERS = "num_users"
 
+P_KEY_NUM_ROUNDS = "num_rounds"
+P_KEY_BATCH_SIZE = "batch_size"
+P_KEY_NUM_EPOCHS = "num_epochs"
+
 
 class RunFuncAndReqParams:
     def __init__(self, run_func, prereq_check_func):
@@ -24,7 +28,14 @@ class RunFuncAndReqParams:
 run_func_ltable = {
     SIM_TYPE_FED_LEARNING: RunFuncAndReqParams(
         sim_run_funcs.run_fed_learn_sim,
-        {P_KEY_NUM_SAMPLES, P_KEY_NUM_FEATURES, P_KEY_NUM_USERS},
+        {
+            P_KEY_NUM_ROUNDS,
+            P_KEY_BATCH_SIZE,
+            P_KEY_NUM_EPOCHS,
+            P_KEY_NUM_SAMPLES,
+            P_KEY_NUM_FEATURES,
+            P_KEY_NUM_USERS,
+        },
     ),
     SIM_TYPE_FED_AVG_WITH_DP: RunFuncAndReqParams(
         sim_run_funcs.run_fed_avg_with_dp, {P_KEY_NUM_LABELS, P_KEY_NUM_FEATURES}
@@ -90,6 +101,15 @@ class Simulation:
 
     def set_read_data_file_path(self, file_path):
         return self._set_param(P_KEY_DATA_FILE_PATH, file_path)
+
+    def set_num_rounds(self, num_rounds):
+        return self._set_param(P_KEY_NUM_ROUNDS, num_rounds)
+
+    def set_batch_size(self, batch_size):
+        return self._set_param(P_KEY_BATCH_SIZE, batch_size)
+
+    def set_num_epochs(self, num_epochs):
+        return self._set_param(P_KEY_NUM_EPOCHS, num_epochs)
 
     def _set_param(self, p_key, val):
         self._params[p_key] = val

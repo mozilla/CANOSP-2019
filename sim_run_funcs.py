@@ -42,6 +42,9 @@ def create_g_params_from_s_params(s_prms):
 def run_fed_learn_sim(s_prms, data):
     num_labels = s_prms[simulation.P_KEY_NUM_LABELS]
     num_features = s_prms[simulation.P_KEY_NUM_FEATURES]
+    num_rounds = s_prms[simulation.P_KEY_NUM_ROUNDS]
+    batch_size = s_prms[simulation.P_KEY_BATCH_SIZE]
+    num_epochs = s_prms[simulation.P_KEY_NUM_EPOCHS]
 
     # Note: data is already transformed for sim format
 
@@ -60,10 +63,10 @@ def run_fed_learn_sim(s_prms, data):
     # Find all the permutations of the parameters
     param_grid = {
         "client_fraction": [1, 0.1],
-        "epoch": [1, 5],
-        "batch_size": [40],  # TODO: need to implement an infinite batch size
+        "epoch": [1, num_epochs],
+        "batch_size": [batch_size],  # TODO: need to implement an infinite batch size
         "init_weight": [[init_weights, init_intercept]],
-        "num_rounds": [10],
+        "num_rounds": [num_rounds],
     }
 
     # run training/testing over all parameter combinations to get the best combination
