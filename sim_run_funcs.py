@@ -50,34 +50,49 @@ def run_fed_learn_sim(s_prms, data):
     labels = np.array(sim_labels)
 
     # Split the data into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.4, random_state=0)
+    X_train, X_test, y_train, y_test = train_test_split(
+        features, labels, test_size=0.4, random_state=0
+    )
 
     init_weights = np.zeros((num_labels, num_features), dtype=np.float64, order="C")
     init_intercept = np.zeros(num_labels, dtype=np.float64, order="C")
 
     # Find all the permutations of the parameters
-    param_grid = {"client_fraction": [1, 0.1],
-                  "epoch": [1, 5],
-                  "batch_size": [40], # TODO: need to implement an infinite batch size
-                  "init_weight": [[init_weights, init_intercept]],
-                  "num_rounds": [10]}
+    param_grid = {
+        "client_fraction": [1, 0.1],
+        "epoch": [1, 5],
+        "batch_size": [40],  # TODO: need to implement an infinite batch size
+        "init_weight": [[init_weights, init_intercept]],
+        "num_rounds": [10],
+    }
 
     # run training/testing over all parameter combinations to get the best combination
     for params in ParameterGrid(param_grid):
         print("Training...")
         print("Params: ", params)
-        classifier = server_update(params["init_weight"], params["client_fraction"], params["num_rounds"], X_train, y_train, params["epoch"], params["batch_size"], False)
+        classifier = server_update(
+            params["init_weight"],
+            params["client_fraction"],
+            params["num_rounds"],
+            X_train,
+            y_train,
+            params["epoch"],
+            params["batch_size"],
+            False,
+        )
         weights = [classifier.coef_, classifier.intercept_]
 
         # need to remove the client dimension from our data for testing
         # ex: [[[1, 1], [2, 2]], [[3, 3], [4, 4]]] needs to become [[1, 1], [2, 2], [3, 3], [4, 4]] for features
         # and [[1, 2], [3, 4]] needs to become [1, 2, 3, 4] for labels
-        reshaped_X_test = np.reshape(X_test, (X_test.shape[0] * X_test.shape[1], X_test.shape[2]))
+        reshaped_X_test = np.reshape(
+            X_test, (X_test.shape[0] * X_test.shape[1], X_test.shape[2])
+        )
         reshaped_y_test = np.reshape(y_test, y_test.size)
 
         score = classifier.score(reshaped_X_test, reshaped_y_test)
 
-        print('Weights: {}\nScore: {:f}\n\n'.format(weights, score))
+        print("Weights: {}\nScore: {:f}\n\n".format(weights, score))
 
 
 def run_fed_avg_with_dp(sim_params, data):

@@ -27,12 +27,17 @@ run_func_ltable = {
         {P_KEY_NUM_SAMPLES, P_KEY_NUM_FEATURES, P_KEY_NUM_USERS},
     ),
     SIM_TYPE_FED_AVG_WITH_DP: RunFuncAndReqParams(
-        sim_run_funcs.run_fed_avg_with_dp,
-        {P_KEY_NUM_LABELS, P_KEY_NUM_FEATURES},
+        sim_run_funcs.run_fed_avg_with_dp, {P_KEY_NUM_LABELS, P_KEY_NUM_FEATURES}
     ),
     DATA_GEN_TYPE_DATA_FROM_FILE: RunFuncAndReqParams(
         sim_run_funcs.read_data_from_file,
-        {P_KEY_NUM_SAMPLES, P_KEY_NUM_LABELS, P_KEY_NUM_FEATURES, P_KEY_NUM_USERS, P_KEY_DATA_FILE_PATH}
+        {
+            P_KEY_NUM_SAMPLES,
+            P_KEY_NUM_LABELS,
+            P_KEY_NUM_FEATURES,
+            P_KEY_NUM_USERS,
+            P_KEY_DATA_FILE_PATH,
+        },
     ),
     DATA_GEN_TYPE_BLOB: RunFuncAndReqParams(
         sim_run_funcs.run_data_gen_blob,
