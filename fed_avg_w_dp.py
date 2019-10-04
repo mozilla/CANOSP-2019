@@ -103,7 +103,7 @@ def _get_data_for_user_for_round(user_id, rount_t):
 
 
 def _gen_gausian_rand_noise(stndrd_dev, vec_len):
-    pass  # TODO
+    return np.random.normal(loc=0.0, scale=stndrd_dev, size=vec_len)
 
 
 def _moments_accountant_accum_priv_spending(noise_scale):
