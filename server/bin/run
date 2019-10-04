@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -eo pipefail
+
+# default variables
+: "${PORT:=8000}"
+: "${SLEEP:=1}"
+: "${TRIES:=60}"
+
+usage() {
+  echo "usage: bin/run"
+  exit 1
+}
+
+wait_for() {
+  tries=0
+  echo "Waiting for $1 to listen on $2..."
+  while true; do
+    [[ $tries -lt $TRIES ]] || return
+    (echo > /dev/tcp/$1/$2) >/dev/null 2>&1
+    result=
+    [[ $? -eq 0 ]] && return
+    sleep $SLEEP
+    tries=$((tries + 1))
+  done
+}
+
+[ $# -lt 1 ] && usage
+
+# Just run the dev flask server for simplicity
+exec python mozfldp/server.py --host=0.0.0.0 --port=${PORT}
