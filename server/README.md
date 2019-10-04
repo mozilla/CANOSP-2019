@@ -17,11 +17,29 @@ project using either GNUMake or you can use docker directly.
 
 
 Build the docker image using:
+
 ```
 docker build . -t mozfldp:latest
 ```
 
 
+
+## Running the server
+
+You can run the server locally serving requests on port 8000 using:
+
+```
+python mozfldp/server.py
+```
+
+Alternately, you can run the service in a container using :
+
+```
+	docker run -dit -p 127.0.0.1:8090:8000 --name mozfldp -t --rm mozfldp:latest -m mozfldp.server
+```
+
+Note that in the above command, we are exposing the container's port
+8000 by binding it to port 8090 on the host computer.
 
 
 ## Sending data to the server
@@ -30,6 +48,11 @@ docker build . -t mozfldp:latest
 You can submit arbitrary JSON blobs to the server using HTTP POST.
 
 A sample curl invocation that will work is:
+
+Note the port `8090` below.
+
+If you are running native locally -the port will be 8000.  Port 8090
+is used if you are running in a docker container.
 
 ```
 curl -d '{"key1":"value1", "key2":"value2"}' \
