@@ -1,63 +1,25 @@
 import runner_run_funcs
 
-SIM_TYPE_FED_LEARNING = "fed_learning"
-SIM_TYPE_FED_AVG_WITH_DP = "fed_avg_with_dp"
-
-DATA_GEN_TYPE_DATA_FROM_FILE = "file_data"
-DATA_GEN_TYPE_BLOB = "data_gen_blob"
-DATA_GEN_TYPE_RAND = "data_gen_rand"
-
-P_KEY_DATA_FILE_PATH = "data_file_path"
-
-P_KEY_NUM_SAMPLES = "num_samples"
-P_KEY_NUM_LABELS = "num_labels"
-P_KEY_NUM_FEATURES = "num_features"
-P_KEY_NUM_USERS = "num_users"
-
-P_KEY_NUM_ROUNDS = "num_rounds"
-P_KEY_BATCH_SIZE = "batch_size"
-P_KEY_NUM_EPOCHS = "num_epochs"
-
-
-run_func_ltable = {
-    SIM_TYPE_FED_LEARNING: (
-        runner_run_funcs.run_fed_learn_sim,
-        {
-            P_KEY_NUM_ROUNDS,
-            P_KEY_BATCH_SIZE,
-            P_KEY_NUM_EPOCHS,
-            P_KEY_NUM_SAMPLES,
-            P_KEY_NUM_FEATURES,
-            P_KEY_NUM_USERS,
-        },
-    ),
-    SIM_TYPE_FED_AVG_WITH_DP: (
-        runner_run_funcs.run_fed_avg_with_dp,
-        {P_KEY_NUM_LABELS, P_KEY_NUM_FEATURES},
-    ),
-    DATA_GEN_TYPE_DATA_FROM_FILE: (
-        runner_run_funcs.read_data_from_file,
-        {
-            P_KEY_NUM_SAMPLES,
-            P_KEY_NUM_LABELS,
-            P_KEY_NUM_FEATURES,
-            P_KEY_NUM_USERS,
-            P_KEY_DATA_FILE_PATH,
-        },
-    ),
-    DATA_GEN_TYPE_BLOB: (
-        runner_run_funcs.run_data_gen_blob,
-        {P_KEY_NUM_SAMPLES, P_KEY_NUM_LABELS, P_KEY_NUM_FEATURES, P_KEY_NUM_USERS},
-    ),
-    DATA_GEN_TYPE_RAND: (
-        runner_run_funcs.run_data_gen_rand,
-        {P_KEY_NUM_SAMPLES, P_KEY_NUM_LABELS, P_KEY_NUM_FEATURES, P_KEY_NUM_USERS},
-    ),
-}
-
-
 class Runner:
-    def __init__(self):
+    SIM_TYPE_FED_LEARNING = "fed_learning"
+    SIM_TYPE_FED_AVG_WITH_DP = "fed_avg_with_dp"
+
+    DATA_GEN_TYPE_DATA_FROM_FILE = "file_data"
+    DATA_GEN_TYPE_BLOB = "data_gen_blob"
+    DATA_GEN_TYPE_RAND = "data_gen_rand"
+
+    P_KEY_DATA_FILE_PATH = "data_file_path"
+
+    P_KEY_NUM_SAMPLES = "num_samples"
+    P_KEY_NUM_LABELS = "num_labels"
+    P_KEY_NUM_FEATURES = "num_features"
+    P_KEY_NUM_USERS = "num_users"
+
+    P_KEY_NUM_ROUNDS = "num_rounds"
+    P_KEY_BATCH_SIZE = "batch_size"
+    P_KEY_NUM_EPOCHS = "num_epochs"
+
+    def __init__(self, param_json):
         self._params = {}
 
     def run(self, sim_type, data_gen_type):
@@ -127,3 +89,50 @@ class Runner:
 
             return False
         return True
+
+
+run_func_ltable = {
+    Runner.SIM_TYPE_FED_LEARNING: (
+        runner_run_funcs.run_fed_learn_sim,
+        {
+            Runner.P_KEY_NUM_ROUNDS,
+            Runner.P_KEY_BATCH_SIZE,
+            Runner.P_KEY_NUM_EPOCHS,
+            Runner.P_KEY_NUM_SAMPLES,
+            Runner.P_KEY_NUM_FEATURES,
+            Runner.P_KEY_NUM_USERS,
+        },
+    ),
+    Runner.SIM_TYPE_FED_AVG_WITH_DP: (
+        runner_run_funcs.run_fed_avg_with_dp,
+        {Runner.P_KEY_NUM_LABELS, Runner.P_KEY_NUM_FEATURES},
+    ),
+    Runner.DATA_GEN_TYPE_DATA_FROM_FILE: (
+        runner_run_funcs.read_data_from_file,
+        {
+            Runner.P_KEY_NUM_SAMPLES,
+            Runner.P_KEY_NUM_LABELS,
+            Runner.P_KEY_NUM_FEATURES,
+            Runner.P_KEY_NUM_USERS,
+            Runner.P_KEY_DATA_FILE_PATH,
+        },
+    ),
+    Runner.DATA_GEN_TYPE_BLOB: (
+        runner_run_funcs.run_data_gen_blob,
+        {
+            Runner.P_KEY_NUM_SAMPLES,
+            Runner.P_KEY_NUM_LABELS,
+            Runner.P_KEY_NUM_FEATURES,
+            Runner.P_KEY_NUM_USERS,
+        },
+    ),
+    Runner.DATA_GEN_TYPE_RAND: (
+        runner_run_funcs.run_data_gen_rand,
+        {
+            Runner.P_KEY_NUM_SAMPLES,
+            Runner.P_KEY_NUM_LABELS,
+            Runner.P_KEY_NUM_FEATURES,
+            Runner.P_KEY_NUM_USERS,
+        },
+    ),
+}
