@@ -1,11 +1,64 @@
-import runner
+import runner_keys as rk
 import random_data_gen
-
-import pandas as pd
 from simulation_util import client_update, server_update
 
+import pandas as pd
 from sklearn.model_selection import ParameterGrid, train_test_split
 import numpy as np
+
+
+def get_run_funcs():
+
+    sim_run_funcs = {
+        rk.SIM_TYPE_FED_LEARNING: (
+            run_fed_learn_sim,
+            {
+                rk.P_KEY_NUM_ROUNDS,
+                rk.P_KEY_BATCH_SIZE,
+                rk.P_KEY_NUM_EPOCHS,
+                rk.P_KEY_NUM_SAMPLES,
+                rk.P_KEY_NUM_FEATURES,
+                rk.P_KEY_NUM_USERS,
+            },
+        ),
+        rk.SIM_TYPE_FED_AVG_WITH_DP: (
+            run_fed_avg_with_dp,
+            {rk.P_KEY_NUM_LABELS, rk.P_KEY_NUM_FEATURES},
+        ),
+    }
+
+    data_gen_run_funcs = {
+        rk.DATA_GEN_TYPE_DATA_FROM_FILE: (
+            read_data_from_file,
+            {
+                rk.P_KEY_NUM_SAMPLES,
+                rk.P_KEY_NUM_LABELS,
+                rk.P_KEY_NUM_FEATURES,
+                rk.P_KEY_NUM_USERS,
+                rk.P_KEY_DATA_FILE_PATH,
+            },
+        ),
+        rk.DATA_GEN_TYPE_BLOB: (
+            run_data_gen_blob,
+            {
+                rk.P_KEY_NUM_SAMPLES,
+                rk.P_KEY_NUM_LABELS,
+                rk.P_KEY_NUM_FEATURES,
+                rk.P_KEY_NUM_USERS,
+            },
+        ),
+        rk.DATA_GEN_TYPE_RAND: (
+            run_data_gen_rand,
+            {
+                rk.P_KEY_NUM_SAMPLES,
+                rk.P_KEY_NUM_LABELS,
+                rk.P_KEY_NUM_FEATURES,
+                rk.P_KEY_NUM_USERS,
+            },
+        ),
+    }
+
+    return sim_run_funcs, data_gen_run_funcs
 
 
 def run_data_gen_blob(s_prms):
@@ -24,7 +77,7 @@ def _run_gen_func(s_prms, gen_func):
 
 
 def read_data_from_file(s_prms):
-    file_path = s_prms[runner.Runner.P_KEY_DATA_FILE_PATH]
+    file_path = s_prms[rk.P_KEY_DATA_FILE_PATH]
     df = pd.read_csv(file_path)
 
     g_prms = create_g_params_from_s_params(s_prms)
@@ -33,19 +86,19 @@ def read_data_from_file(s_prms):
 
 def create_g_params_from_s_params(s_prms):
     return random_data_gen.InputGenParams(
-        s_prms[runner.Runner.P_KEY_NUM_SAMPLES],
-        s_prms[runner.Runner.P_KEY_NUM_LABELS],
-        s_prms[runner.Runner.P_KEY_NUM_FEATURES],
-        s_prms[runner.Runner.P_KEY_NUM_USERS],
+        s_prms[rk.P_KEY_NUM_SAMPLES],
+        s_prms[rk.P_KEY_NUM_LABELS],
+        s_prms[rk.P_KEY_NUM_FEATURES],
+        s_prms[rk.P_KEY_NUM_USERS],
     )
 
 
 def run_fed_learn_sim(s_prms, data):
-    num_labels = s_prms[runner.Runner.P_KEY_NUM_LABELS]
-    num_features = s_prms[runner.Runner.P_KEY_NUM_FEATURES]
-    num_rounds = s_prms[runner.Runner.P_KEY_NUM_ROUNDS]
-    batch_size = s_prms[runner.Runner.P_KEY_BATCH_SIZE]
-    num_epochs = s_prms[runner.Runner.P_KEY_NUM_EPOCHS]
+    num_labels = s_prms[rk.Runner.P_KEY_NUM_LABELS]
+    num_features = s_prms[rk.P_KEY_NUM_FEATURES]
+    num_rounds = s_prms[rk.P_KEY_NUM_ROUNDS]
+    batch_size = s_prms[rk.P_KEY_BATCH_SIZE]
+    num_epochs = s_prms[rk.P_KEY_NUM_EPOCHS]
 
     # Note: data is already transformed for sim format
 
