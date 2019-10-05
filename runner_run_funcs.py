@@ -94,7 +94,7 @@ def create_g_params_from_s_params(s_prms):
 
 
 def run_fed_learn_sim(s_prms, data):
-    num_labels = s_prms[rk.Runner.P_KEY_NUM_LABELS]
+    num_labels = s_prms[rk.P_KEY_NUM_LABELS]
     num_features = s_prms[rk.P_KEY_NUM_FEATURES]
     num_rounds = s_prms[rk.P_KEY_NUM_ROUNDS]
     batch_size = s_prms[rk.P_KEY_BATCH_SIZE]

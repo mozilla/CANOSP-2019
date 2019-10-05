@@ -12,7 +12,7 @@ class Runner:
 
     def _run(self, sim_type, data_gen_type):
         sim_run_func, sim_prereq_params = Runner.run_func_ltable[sim_type]
-        gen_run_func, gen_prereq_params = Runner.run_func_ltable[data_gen_type]
+        gen_run_func, gen_prereq_params = Runner.data_gen_func_ltable[data_gen_type]
 
         if not self._sim_has_required_params_for_given_run_func(
             sim_prereq_params, sim_type
