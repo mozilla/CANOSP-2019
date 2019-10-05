@@ -19,14 +19,8 @@ P_KEY_BATCH_SIZE = "batch_size"
 P_KEY_NUM_EPOCHS = "num_epochs"
 
 
-class RunFuncAndReqParams:
-    def __init__(self, run_func, prereq_check_func):
-        self.run_func = run_func
-        self.prereq_params = prereq_check_func
-
-
 run_func_ltable = {
-    SIM_TYPE_FED_LEARNING: RunFuncAndReqParams(
+    SIM_TYPE_FED_LEARNING: (
         runner_run_funcs.run_fed_learn_sim,
         {
             P_KEY_NUM_ROUNDS,
@@ -37,10 +31,11 @@ run_func_ltable = {
             P_KEY_NUM_USERS,
         },
     ),
-    SIM_TYPE_FED_AVG_WITH_DP: RunFuncAndReqParams(
-        runner_run_funcs.run_fed_avg_with_dp, {P_KEY_NUM_LABELS, P_KEY_NUM_FEATURES}
+    SIM_TYPE_FED_AVG_WITH_DP: (
+        runner_run_funcs.run_fed_avg_with_dp,
+        {P_KEY_NUM_LABELS, P_KEY_NUM_FEATURES},
     ),
-    DATA_GEN_TYPE_DATA_FROM_FILE: RunFuncAndReqParams(
+    DATA_GEN_TYPE_DATA_FROM_FILE: (
         runner_run_funcs.read_data_from_file,
         {
             P_KEY_NUM_SAMPLES,
@@ -50,11 +45,11 @@ run_func_ltable = {
             P_KEY_DATA_FILE_PATH,
         },
     ),
-    DATA_GEN_TYPE_BLOB: RunFuncAndReqParams(
+    DATA_GEN_TYPE_BLOB: (
         runner_run_funcs.run_data_gen_blob,
         {P_KEY_NUM_SAMPLES, P_KEY_NUM_LABELS, P_KEY_NUM_FEATURES, P_KEY_NUM_USERS},
     ),
-    DATA_GEN_TYPE_RAND: RunFuncAndReqParams(
+    DATA_GEN_TYPE_RAND: (
         runner_run_funcs.run_data_gen_rand,
         {P_KEY_NUM_SAMPLES, P_KEY_NUM_LABELS, P_KEY_NUM_FEATURES, P_KEY_NUM_USERS},
     ),
@@ -66,24 +61,24 @@ class Runner:
         self._params = {}
 
     def run(self, sim_type, data_gen_type):
-        sim_run_info = run_func_ltable[sim_type]
-        data_gen_run_info = run_func_ltable[data_gen_type]
+        sim_run_func, sim_prereq_params = run_func_ltable[sim_type]
+        gen_run_func, gen_prereq_params = run_func_ltable[data_gen_type]
 
         if not self._sim_has_required_params_for_given_run_func(
-            sim_run_info.prereq_params, sim_type
+            sim_prereq_params, sim_type
         ):
             return
 
         if not self._sim_has_required_params_for_given_run_func(
-            sim_run_info.prereq_params, data_gen_type
+            gen_prereq_params, data_gen_type
         ):
             return
 
         print('Generating "{}" data...'.format(data_gen_type))
-        generated_data = data_gen_run_info.run_func(self._params)
+        generated_data = gen_run_func(self._params)
 
         print('Running the "{}" simulation...'.format(sim_type))
-        sim_run_info.run_func(self._params, generated_data)
+        sim_run_func(self._params, generated_data)
 
         print("Finished!")
 
