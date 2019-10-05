@@ -1,4 +1,6 @@
 import runner_run_funcs
+import json
+
 
 class Runner:
     SIM_TYPE_FED_LEARNING = "fed_learning"
@@ -20,7 +22,7 @@ class Runner:
     P_KEY_NUM_EPOCHS = "num_epochs"
 
     def __init__(self, param_json):
-        self._params = {}
+        self._params = json.loads(param_json)
 
     def run(self, sim_type, data_gen_type):
         sim_run_func, sim_prereq_params = run_func_ltable[sim_type]
@@ -43,34 +45,6 @@ class Runner:
         sim_run_func(self._params, generated_data)
 
         print("Finished!")
-
-    def set_num_samples(self, num_samples):
-        return self._set_param(P_KEY_NUM_SAMPLES, num_samples)
-
-    def set_num_labels(self, num_labels):
-        return self._set_param(P_KEY_NUM_LABELS, num_labels)
-
-    def set_num_features(self, num_features):
-        return self._set_param(P_KEY_NUM_FEATURES, num_features)
-
-    def set_num_users(self, num_users):
-        return self._set_param(P_KEY_NUM_USERS, num_users)
-
-    def set_read_data_file_path(self, file_path):
-        return self._set_param(P_KEY_DATA_FILE_PATH, file_path)
-
-    def set_num_rounds(self, num_rounds):
-        return self._set_param(P_KEY_NUM_ROUNDS, num_rounds)
-
-    def set_batch_size(self, batch_size):
-        return self._set_param(P_KEY_BATCH_SIZE, batch_size)
-
-    def set_num_epochs(self, num_epochs):
-        return self._set_param(P_KEY_NUM_EPOCHS, num_epochs)
-
-    def _set_param(self, p_key, val):
-        self._params[p_key] = val
-        return self
 
     def _sim_has_required_params_for_given_run_func(
         self, run_func_params, run_func_key
