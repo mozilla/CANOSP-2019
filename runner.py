@@ -8,9 +8,7 @@ class Runner:
 
     def __init__(self, param_json, sim_type, data_gen_type):
         self._params = json.loads(param_json)
-        self._run(sim_type, data_gen_type)
 
-    def _run(self, sim_type, data_gen_type):
         sim_run_func, sim_prereq_params = Runner.run_func_ltable[sim_type]
         gen_run_func, gen_prereq_params = Runner.data_gen_func_ltable[data_gen_type]
 
