@@ -13,7 +13,7 @@ def run_data_gen_blob(s_prms):
 
 
 def run_data_gen_rand(s_prms):
-    return _run_gen_func(s_prms, random_data_gen.generate_rand_data)
+    return _run_gen_func(s_prms, random_data_gen.generate_random_data)
 
 
 # Blob and rand are called identically, so it makes sense to wrap this in a func
