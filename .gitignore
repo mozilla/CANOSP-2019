@@ -106,3 +106,7 @@ venv.bak/
 
 # VSCode
 .vscode/
+
+# Ignore mozfldp/simulation_util.py
+# as it's copied in at build time 
+server/mozfldp/simulation_util.py
