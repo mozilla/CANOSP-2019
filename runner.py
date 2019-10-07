@@ -11,24 +11,20 @@ class Runner:
 
     run_func_ltable, data_gen_func_ltable = runner_run_funcs.get_run_funcs()
 
-    def __init__(self, param_json, sim_type, data_gen_type):
+    def __init__(self, param_json, s_type, d_type):
         self._params = json.loads(param_json)
 
-        sim_run_func, sim_prereq_params = Runner.run_func_ltable[sim_type]
-        gen_run_func, gen_prereq_params = Runner.data_gen_func_ltable[data_gen_type]
+        s_run_func, s_prq_prms = Runner.run_func_ltable[s_type]
+        g_run_func, g_prq_prms = Runner.data_gen_func_ltable[d_type]
 
-        self._verify_sim_has_required_params_for_given_run_func(
-            sim_prereq_params, sim_type
-        )
-        self._verify_sim_has_required_params_for_given_run_func(
-            gen_prereq_params, data_gen_type
-        )
+        self._verify_sim_has_required_params_for_given_run_func(s_prq_prms, s_type)
+        self._verify_sim_has_required_params_for_given_run_func(g_prq_prms, d_type)
 
-        print('Generating "{}" data...'.format(data_gen_type))
-        generated_data = gen_run_func(self._params)
+        print('Generating "{}" data...'.format(d_type))
+        generated_data = g_run_func(self._params)
 
-        print('Running the "{}" simulation...'.format(sim_type))
-        sim_run_func(self._params, generated_data)
+        print('Running the "{}" simulation...'.format(s_type))
+        s_run_func(self._params, generated_data)
 
         print("Finished!")
 
