@@ -100,7 +100,7 @@ def server_update(
         # calculate the number of clients used in this round
         m = max(int(client_num * C), 1)
         # random set of m client's index
-        S = np.array(random.sample(range(client_num), client_num))
+        S = np.array(random.sample(range(client_num), m))
 
         num_samples = []
 
