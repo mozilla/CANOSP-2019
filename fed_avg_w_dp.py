@@ -1,5 +1,6 @@
 import random
 import numpy as np
+from sklearn.linear_model import SGDClassifier
 
 
 class FedAvgWithDpParams:
@@ -66,12 +67,50 @@ def _merge_all_user_weights(
     return merged_weights
 
 
-def flat_clip():
+def flat_clip(difference):
+
+
     pass
 
 
-def user_update_fed_avg(params):
-    pass
+def user_update_fed_avg(features, labels , theta):
+
+    batches_features = []
+    batches_labels = []
+
+    coef = list(theta[0])
+    intercept = list(theta[1])
+
+    epoch = 10
+    batch_size = 10
+    stepsize = 0.1
+
+    classifier = SGDClassifier(loss="hinge", penalty="l2", max_iter=1)
+
+    for i in range(0, len(k), batch_size):
+        batches_features.append(k[i : i + batch_size])
+        batches_labels.append(labels[i : i + batch_size])
+
+
+    for i in range(epoch):
+        for j in range(batch_size):
+
+            classifier.fit(
+                batches_features[i],
+                batches_labels[i],
+                coef_init=coef,
+                intercept_init=intercept,
+            )
+
+            coef = classifier.coef_
+            intercept = classifier.intercept_
+
+    weights = [coef, intercept]
+
+    return weights
+            
+
+    
 
 
 def _get_random_selection_of_user_idxs(num_users):
