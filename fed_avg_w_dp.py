@@ -105,7 +105,9 @@ def user_update_fed_avg(features, labels , theta):
             coef = classifier.coef_
             intercept = classifier.intercept_
 
-    weights = [coef, intercept]
+            trained_weight = [coef, intercept]
+            difference = np.subtract(trained_weight,theta)
+            weights = theta + flat_clip(difference)
 
     return weights
             
