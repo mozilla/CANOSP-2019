@@ -1,7 +1,7 @@
 import json
 
-import random_data_gen
-from simulation_util import client_update, server_update
+from mozfldp import random_data_gen
+from mozfldp.simulation_util import client_update, server_update
 
 import pandas as pd
 from sklearn.model_selection import ParameterGrid, train_test_split
