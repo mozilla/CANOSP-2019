@@ -30,7 +30,7 @@ def fed_avg_w_dp(prms, data):
         # Query the selected users
         user_updates_buf.clear()
         for user_idx in random_user_idxs_sample:
-            user_data = _get_data_for_user_for_round(user_idx, round_t)
+            user_data = _get_data_for_user_for_round(data, user_idx, round_t)
             user_updates_buf.append(user_update_fed_avg(user_data, prev_theta))
 
         # Merge (fc)
@@ -110,17 +110,18 @@ def user_update_fed_avg(features, labels , theta):
             weights = theta + flat_clip(difference)
 
     return weights
-            
 
-    
+
+
 
 
 def _get_random_selection_of_user_idxs(num_users):
     return np.array(random.sample(range(num_users), num_users))
 
 
-def _init_theta_from_moment_accountant():
-    pass  # TODO
+def _init_theta_from_moment_accountant(num_users):
+    # Just a placeholder value for now
+    return [0.5] * num_users
 
 
 def _init_user_weights_and_weight_sum(num_users, weight_mod):
@@ -139,8 +140,16 @@ def _calc_standard_dev(noise_scale, sensitivity, usr_sel_prob, weight_sum):
     return (noise_scale * sensitivity) / (usr_sel_prob * weight_sum)
 
 
-def _get_data_for_user_for_round(user_id, rount_t):
-    pass  # TODO
+def _get_data_for_user_for_round(data, user_id, round_t):
+    '''
+    Just extract an entry (label and feature set) from the generated data for the given user.
+    '''
+    labels, feats = data
+
+    round_label = labels[user_id][round_t]
+    round_feats = feats[user_id][round_t]
+
+    return round_label, round_feats
 
 
 def _gen_gausian_rand_noise(stndrd_dev, vec_len):
@@ -148,8 +157,8 @@ def _gen_gausian_rand_noise(stndrd_dev, vec_len):
 
 
 def _moments_accountant_accum_priv_spending(noise_scale):
-    pass  # TODO
+    return -1  # TODO
 
 
 def _calc_privacy_spent():
-    pass  # TODO
+    return -1  # TODO
