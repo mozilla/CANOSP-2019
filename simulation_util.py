@@ -31,10 +31,11 @@ def client_update(init_weights, epochs, batch_size, features, labels):
     intercept = list(init_weights[1])
 
     # set max_iter to 1 so that each .fit() call only does one training step
-    classifier = SGDClassifier(loss="hinge", penalty="l2", max_iter=1)
+    classifier = SGDClassifier(loss="log", max_iter=1)
 
     for epoch in range(epochs):
         for i in range(len(batches_features)):
+            # print(coef)
             classifier.fit(
                 batches_features[i],
                 batches_labels[i],
@@ -100,17 +101,18 @@ def server_update(
         # calculate the number of clients used in this round
         m = max(int(client_num * C), 1)
         # random set of m client's index
-        S = np.array(random.sample(range(client_num), client_num))
+        user_ids = np.array(random.sample(range(client_num), m))
 
+        # print(user_ids)
         num_samples = []
 
         # grab all the weights from clients
         client_coefs = None
         client_intercepts = None
 
-        for i in S:
-            client_feature = features[i]
-            client_label = labels[i]
+        for user_id in user_ids:
+            client_feature = features[user_id]
+            client_label = labels[user_id]
 
             coefs, intercept = client_update([coef, intercept], epoch, batch_size, client_feature, client_label)
 
@@ -130,11 +132,11 @@ def server_update(
         new_coefs = np.zeros(init_weight[0].shape, dtype=np.float64, order="C")
         new_intercept = np.zeros(init_weight[1].shape, dtype=np.float64, order="C")
         
-        for i in range(len(client_coefs)):
-            client_coef = client_coefs[i]
-            client_intercept = client_intercepts[i]
+        for index, user_id in enumerate(user_ids):
+            client_coef = client_coefs[index]
+            client_intercept = client_intercepts[index]
 
-            n_k = len(features[i])
+            n_k = num_samples[index]              # FIXME: need to user the correct user id based on the radnomization
             added_coef = [value * (n_k) / sum(num_samples) for value in client_coef]
             added_intercept = [value * (n_k) / sum(num_samples) for value in client_intercept]
 
@@ -149,10 +151,10 @@ def server_update(
             print("Updated Weights: ", coef, intercept)
 
     # load coefficients and intercept into the classifier
-    clf = SGDClassifier(loss="hinge", penalty="l2")
+    clf = SGDClassifier(loss="log")
 
-    clf.coef_ = new_coefs
-    clf.intercept_ = new_intercept
+    clf.coef_ = coef
+    clf.intercept_ = intercept
     clf.classes_ = np.unique(
         list(labels)
     )  # the unique labels are the classes for the classifier
