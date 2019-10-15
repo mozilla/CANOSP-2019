@@ -31,26 +31,23 @@ def client_update(init_weights, epochs, batch_size, features, labels):
     coef = list(init_weights[0])
     intercept = list(init_weights[1])
 
-    # set max_iter to 1 so that each .fit() call only does one training step
-    classifier = SGDClassifier(loss="log", max_iter=1)
+    classifier = SGDClassifier(loss="log")
     classifier.coef_ = np.array(coef)
     classifier.intercept_ = np.array(intercept)
 
     for epoch in range(epochs):
         for i in range(len(batches_features)):
-            # print(coef)
-            
             classifier.partial_fit(
                 batches_features[i],
                 batches_labels[i],
-                classes=[0,1,2,3,4,5,6,7,8,9]
+                # list of all possible classes - need to get all unique values instead of hardcoding
+                classes=[0,1,2,3,4,5,6,7,8,9]       
             )
-
 
             # update the weights so for the next batch the new ones are used
             coef = classifier.coef_
             intercept = classifier.intercept_
-        print("epoch", epoch)
+
     weights = [coef, intercept]
 
     return weights
@@ -90,7 +87,6 @@ def server_update(
     display_weight_per_round: a boolean value used to toggle the display of weight value per round
     
     """
-    print(init_weight[0].shape)
     # initialize the weights
     coef = list(init_weight[0])
     intercept = list(init_weight[1])
