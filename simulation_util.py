@@ -140,7 +140,7 @@ def server_update(
             client_coef = client_coefs[index]
             client_intercept = client_intercepts[index]
 
-            n_k = num_samples[index]              # FIXME: need to user the correct user id based on the radnomization
+            n_k = num_samples[index]
             added_coef = [value * (n_k) / sum(num_samples) for value in client_coef]
             added_intercept = [value * (n_k) / sum(num_samples) for value in client_intercept]
 
