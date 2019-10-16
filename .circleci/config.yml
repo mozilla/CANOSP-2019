@@ -1,0 +1,11 @@
+version: 2
+jobs:
+  py36:
+    parallelism: 4
+    docker:
+      - image: python:3.6-stretch
+  build:
+    steps:
+      - run:
+        command: |
+          pipenv run python setup.py pytest
