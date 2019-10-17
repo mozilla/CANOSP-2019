@@ -2,6 +2,7 @@ import json
 
 from mozfldp import random_data_gen
 from mozfldp.simulation_util import client_update, server_update
+from fed_avg_w_dp import run_fed_avg_with_dp, FedAvgWithDpParams
 
 import pandas as pd
 from sklearn.model_selection import ParameterGrid, train_test_split
@@ -99,8 +100,16 @@ def run_fed_learn_sim(s_prms, data):
         print("Weights: {}\nScore: {:f}\n\n".format(weights, score))
 
 
-def run_fed_avg_with_dp(sim_params, data):
-    print("TODO: Implement Federated Averaging with DP!")
+def fed_avg_with_dp(s_prms, data):
+    prms = FedAvgWithDpParams(
+        s_prms[Runner.P_KEY_NUM_USERS],
+        s_prms[Runner.P_KEY_NUM_FEATURES],
+        s_prms[Runner.P_KEY_WEIGHT_MOD],
+        s_prms[Runner.P_KEY_SENSITIVITY],
+        s_prms[Runner.P_KEY_NOISE_SCALE],
+    )
+
+    run_fed_avg_with_dp(prms, data)
 
 
 class RunnerException(Exception):
@@ -127,6 +136,10 @@ class Runner:
     P_KEY_BATCH_SIZE = "batch_size"
     P_KEY_NUM_EPOCHS = "num_epochs"
 
+    P_KEY_WEIGHT_MOD = "weight_mod"
+    P_KEY_SENSITIVITY = "sensitivity"
+    P_KEY_NOISE_SCALE = "noise_scale"
+
     _sim_run_func_ltable = {
         SIM_TYPE_FED_LEARNING: (
             run_fed_learn_sim,
@@ -140,8 +153,14 @@ class Runner:
             },
         ),
         SIM_TYPE_FED_AVG_WITH_DP: (
-            run_fed_avg_with_dp,
-            {P_KEY_NUM_LABELS, P_KEY_NUM_FEATURES},
+            fed_avg_with_dp,
+            {
+                P_KEY_NUM_LABELS,
+                P_KEY_NUM_FEATURES,
+                P_KEY_WEIGHT_MOD,
+                P_KEY_SENSITIVITY,
+                P_KEY_NOISE_SCALE,
+            },
         ),
     }
 

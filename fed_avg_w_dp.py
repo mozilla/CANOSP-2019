@@ -4,15 +4,20 @@ from sklearn.linear_model import SGDClassifier
 
 
 class FedAvgWithDpParams:
-    def __init__(self, weight_mod, num_users, num_features, sensitivity, noise_scale):
-        self.weight_mod = weight_mod  # w_hat
+    def __init__(self, num_users, num_features, weight_mod, sensitivity, noise_scale):
         self.num_users = num_users
         self.num_features = num_features
+        self.weight_mod = weight_mod  # w_hat
         self.sensitivity = sensitivity
         self.noise_scale = noise_scale
 
 
-def fed_avg_w_dp(prms, data):
+def run_fed_avg_with_dp(prms, data):
+    """
+    Runs federated averaging with differential privacy
+    prms: The parameters needed to run (FedAvgWithDpParams)
+    data: Data that conforms to the format... (TODO)
+    """
 
     user_weights, weight_sum = _init_user_weights_and_weight_sum(prms.num_users)
     theta = None
