@@ -19,12 +19,15 @@ def run_fed_avg_with_dp(prms, data):
     data: Data that conforms to the format... (TODO)
     """
 
-    user_weights, weight_sum = _init_user_weights_and_weight_sum(prms.num_users)
+    user_weights, weight_sum = _init_user_weights_and_weight_sum(
+        prms.num_users, prms.weight_mod
+    )
     theta = None
-    prev_theta = _init_theta_from_moment_accountant()
+    theta_0 = _init_theta_from_moment_accountant(prms.num_users)
+    prev_theta = np.array(theta_0, copy=True)
     user_sel_prob = 1 / prms.num_users
     standard_dev = _calc_standard_dev(
-        prms.noise_scale, prms.sensitivity, prms.usr_sel_prob, prms.weight_sum
+        prms.noise_scale, prms.sensitivity, prms.usr_sel_prob, weight_sum
     )  # This feels weird being a constant...
     user_updates_buf = []
 
@@ -35,12 +38,16 @@ def run_fed_avg_with_dp(prms, data):
         # Query the selected users
         user_updates_buf.clear()
         for user_idx in random_user_idxs_sample:
-            user_data = _get_data_for_user_for_round(data, user_idx, round_t)
-            user_updates_buf.append(user_update_fed_avg(user_data, prev_theta))
+            user_round_feats, user_round_labels = _get_data_for_user_for_round(
+                data, user_idx, round_t
+            )
+            user_updates_buf.append(
+                user_update_fed_avg(prms, user_round_feats, user_round_labels, theta_0)
+            )
 
         # Merge (fc)
         merged_user_values = _merge_all_user_weights(
-            prms, user_sel_prob, user_updates_buf, user_weights
+            prms.num_features, user_sel_prob, weight_sum, user_updates_buf, user_weights
         )  # Note that we start at t + 1
 
         # Note: Assuming for now that S is defined before we run
@@ -59,10 +66,10 @@ def run_fed_avg_with_dp(prms, data):
 
 # TODO: Give better function name...
 def _merge_all_user_weights(
-    params, user_sel_prob, weight_sum, user_updates_buf, user_weights
+    num_feats, user_sel_prob, weight_sum, user_updates_buf, user_weights
 ):
     num_users_in_batch = len(user_updates_buf)
-    merged_weights = np.zeros(params.num_features)
+    merged_weights = np.zeros(num_feats)
 
     for i in range(num_users_in_batch):
         weighted_user_val = np.multiply(user_updates_buf[i], user_weights[i])
@@ -72,37 +79,40 @@ def _merge_all_user_weights(
     return merged_weights
 
 
-def flat_clip(difference):
+def flat_clip(sensitivity, vec):
+    return vec * min(1, sensitivity / np.linalg.norm(vec))
 
 
-    pass
-
-
-def user_update_fed_avg(features, labels , theta):
+def user_update_fed_avg(prms, round_user_features, round_user_labels, theta_0):
 
     batches_features = []
     batches_labels = []
 
-    coef = list(theta[0])
-    intercept = list(theta[1])
-
     epoch = 10
     batch_size = 10
-    stepsize = 0.1
 
     classifier = SGDClassifier(loss="hinge", penalty="l2", max_iter=1)
 
-    for i in range(0, len(k), batch_size):
-        batches_features.append(k[i : i + batch_size])
-        batches_labels.append(labels[i : i + batch_size])
+    round_num_entries = len(round_user_features)
+    num_batches = (
+        round_num_entries // batch_size
+    )  # For now just truncate any batches that are smaller than batch_size
 
+    coef = np.zeros((prms.num_labels, prms.num_features), dtype=np.float64, order="C")
+    intercept = np.zeros(prms.num_labels, dtype=np.float64, order="C")
+    theta = np.array(theta_0, copy=True)
 
-    for i in range(epoch):
-        for j in range(batch_size):
+    # Split the round data into seperate batches
+    for i in range(0, round_num_entries, batch_size):
+        batches_features.append(round_user_features[i : i + batch_size])
+        batches_labels.append(round_user_labels[i : i + batch_size])
+
+    for _ in range(epoch):
+        for j in num_batches:
 
             classifier.fit(
-                batches_features[i],
-                batches_labels[i],
+                batches_features[j],
+                batches_labels[j],
                 coef_init=coef,
                 intercept_init=intercept,
             )
@@ -110,14 +120,15 @@ def user_update_fed_avg(features, labels , theta):
             coef = classifier.coef_
             intercept = classifier.intercept_
 
-            trained_weight = [coef, intercept]
-            difference = np.subtract(trained_weight,theta)
-            weights = theta + flat_clip(difference)
+            # trained_weight = [coef, intercept]
 
-    return weights
+            theta = np.subtract(
+                theta, coef
+            )  # NOTE: THIS IS WRONG! We also need to involve intercept somehow...
+            difference = np.subtract(theta, theta_0)
+            theta = np.add(theta_0, flat_clip(prms.sensitivity, difference))
 
-
-
+    return theta - theta_0
 
 
 def _get_random_selection_of_user_idxs(num_users):
@@ -133,7 +144,7 @@ def _init_user_weights_and_weight_sum(num_users, weight_mod):
     weights = []
     init_weight = min(num_users / weight_mod, 1)
 
-    for i in range(num_users):
+    for _ in range(num_users):
         weights.append(init_weight)
 
     weight_sum = num_users * init_weight
@@ -146,9 +157,9 @@ def _calc_standard_dev(noise_scale, sensitivity, usr_sel_prob, weight_sum):
 
 
 def _get_data_for_user_for_round(data, user_id, round_t):
-    '''
+    """
     Just extract an entry (label and feature set) from the generated data for the given user.
-    '''
+    """
     labels, feats = data
 
     round_label = labels[user_id][round_t]
