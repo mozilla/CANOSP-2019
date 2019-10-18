@@ -31,7 +31,7 @@ def run_fed_avg_with_dp(prms, data):
     """
     Runs federated averaging with differential privacy
     prms: The parameters needed to run (FedAvgWithDpParams)
-    data: Data that conforms to the format... (TODO)
+    data: Data to train on. In the format of: ([user_1_labels, user_2_labels, ...], [user_1_feats, user_2_feats, ...])
     """
 
     user_weights, weight_sum = _init_user_weights_and_weight_sum(
@@ -84,6 +84,10 @@ def run_fed_avg_with_dp(prms, data):
 def _merge_all_user_weights(
     num_feats, user_sel_prob, weight_sum, user_updates_buf, user_weights
 ):
+    """
+    Merge all user updates for a round into a single delta (vector).
+    """
+
     num_users_in_batch = len(user_updates_buf)
     merged_weights = np.zeros(num_feats)
 
