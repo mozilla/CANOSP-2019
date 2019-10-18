@@ -104,6 +104,10 @@ def fed_avg_with_dp(s_prms, data):
     prms = FedAvgWithDpParams(
         s_prms[Runner.P_KEY_NUM_USERS],
         s_prms[Runner.P_KEY_NUM_FEATURES],
+        s_prms[Runner.P_KEY_NUM_LABELS],
+        s_prms[Runner.P_KEY_NUM_ROUNDS],
+        s_prms[Runner.P_KEY_BATCH_SIZE],
+        s_prms[Runner.P_KEY_NUM_EPOCHS],
         s_prms[Runner.P_KEY_WEIGHT_MOD],
         s_prms[Runner.P_KEY_SENSITIVITY],
         s_prms[Runner.P_KEY_NOISE_SCALE],
@@ -155,8 +159,12 @@ class Runner:
         SIM_TYPE_FED_AVG_WITH_DP: (
             fed_avg_with_dp,
             {
+                P_KEY_NUM_USERS,
                 P_KEY_NUM_LABELS,
                 P_KEY_NUM_FEATURES,
+                P_KEY_NUM_ROUNDS,
+                P_KEY_BATCH_SIZE,
+                P_KEY_NUM_EPOCHS,
                 P_KEY_WEIGHT_MOD,
                 P_KEY_SENSITIVITY,
                 P_KEY_NOISE_SCALE,

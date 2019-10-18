@@ -4,9 +4,24 @@ from sklearn.linear_model import SGDClassifier
 
 
 class FedAvgWithDpParams:
-    def __init__(self, num_users, num_features, weight_mod, sensitivity, noise_scale):
+    def __init__(
+        self,
+        num_users,
+        num_features,
+        num_labels,
+        num_rounds,
+        batch_size,
+        num_epochs,
+        weight_mod,
+        sensitivity,
+        noise_scale,
+    ):
         self.num_users = num_users
         self.num_features = num_features
+        self.num_labels = num_labels
+        self.num_rounds = num_rounds
+        self.batch_size = batch_size
+        self.num_epochs = num_epochs
         self.weight_mod = weight_mod  # w_hat
         self.sensitivity = sensitivity
         self.noise_scale = noise_scale
@@ -23,11 +38,11 @@ def run_fed_avg_with_dp(prms, data):
         prms.num_users, prms.weight_mod
     )
     theta = None
-    theta_0 = _init_theta_from_moment_accountant(prms.num_users)
+    theta_0 = _init_theta_from_moment_accountant(prms.num_features)
     prev_theta = np.array(theta_0, copy=True)
     user_sel_prob = 1 / prms.num_users
     standard_dev = _calc_standard_dev(
-        prms.noise_scale, prms.sensitivity, prms.usr_sel_prob, weight_sum
+        prms.noise_scale, prms.sensitivity, user_sel_prob, weight_sum
     )  # This feels weird being a constant...
     user_updates_buf = []
 
@@ -38,8 +53,9 @@ def run_fed_avg_with_dp(prms, data):
         # Query the selected users
         user_updates_buf.clear()
         for user_idx in random_user_idxs_sample:
-            user_round_feats, user_round_labels = _get_data_for_user_for_round(
-                data, user_idx, round_t
+            print("Round: {} User: {}".format(round_t, user_idx))
+            user_round_labels, user_round_feats = _get_data_for_user_for_round(
+                prms, data, user_idx
             )
             user_updates_buf.append(
                 user_update_fed_avg(prms, user_round_feats, user_round_labels, theta_0)
@@ -88,27 +104,24 @@ def user_update_fed_avg(prms, round_user_features, round_user_labels, theta_0):
     batches_features = []
     batches_labels = []
 
-    epoch = 10
-    batch_size = 10
-
     classifier = SGDClassifier(loss="hinge", penalty="l2", max_iter=1)
 
     round_num_entries = len(round_user_features)
-    num_batches = (
-        round_num_entries // batch_size
-    )  # For now just truncate any batches that are smaller than batch_size
+
+    # For now just skip any batches that are smaller than batch_size
+    num_batches = round_num_entries // prms.batch_size
 
     coef = np.zeros((prms.num_labels, prms.num_features), dtype=np.float64, order="C")
     intercept = np.zeros(prms.num_labels, dtype=np.float64, order="C")
     theta = np.array(theta_0, copy=True)
 
     # Split the round data into seperate batches
-    for i in range(0, round_num_entries, batch_size):
-        batches_features.append(round_user_features[i : i + batch_size])
-        batches_labels.append(round_user_labels[i : i + batch_size])
+    for i in range(0, round_num_entries, prms.batch_size):
+        batches_features.append(round_user_features[i : i + prms.batch_size])
+        batches_labels.append(round_user_labels[i : i + prms.batch_size])
 
-    for _ in range(epoch):
-        for j in num_batches:
+    for _ in range(prms.num_epochs):
+        for j in range(num_batches):
 
             classifier.fit(
                 batches_features[j],
@@ -122,9 +135,9 @@ def user_update_fed_avg(prms, round_user_features, round_user_labels, theta_0):
 
             # trained_weight = [coef, intercept]
 
-            theta = np.subtract(
-                theta, coef
-            )  # NOTE: THIS IS WRONG! We also need to involve intercept somehow...
+            # NOTE: THIS IS WRONG! We also need to involve intercept somehow...
+            # theta = np.subtract(theta, coef)
+
             difference = np.subtract(theta, theta_0)
             theta = np.add(theta_0, flat_clip(prms.sensitivity, difference))
 
@@ -132,12 +145,14 @@ def user_update_fed_avg(prms, round_user_features, round_user_labels, theta_0):
 
 
 def _get_random_selection_of_user_idxs(num_users):
-    return np.array(random.sample(range(num_users), num_users))
+    # For now just randomly pick 1/5th of the users.
+    # TODO: Change this later!
+    return np.random.choice(num_users, num_users // 5)
 
 
-def _init_theta_from_moment_accountant(num_users):
+def _init_theta_from_moment_accountant(num_features):
     # Just a placeholder value for now
-    return [0.5] * num_users
+    return [0.5] * num_features
 
 
 def _init_user_weights_and_weight_sum(num_users, weight_mod):
@@ -156,16 +171,25 @@ def _calc_standard_dev(noise_scale, sensitivity, usr_sel_prob, weight_sum):
     return (noise_scale * sensitivity) / (usr_sel_prob * weight_sum)
 
 
-def _get_data_for_user_for_round(data, user_id, round_t):
+def _get_data_for_user_for_round(prms, data, user_id):
     """
-    Just extract an entry (label and feature set) from the generated data for the given user.
+    Pick a random amount of entries per user for a given round.
     """
     labels, feats = data
 
-    round_label = labels[user_id][round_t]
-    round_feats = feats[user_id][round_t]
+    # TODO: np is a temp hack! Probably should do this to data at the start of the sim instead.
+    user_labels = np.array(labels[user_id])
+    user_feats = np.array(feats[user_id])
 
-    return round_label, round_feats
+    num_entries_for_user = len(user_labels)
+    num_entries_to_choose = random.randint(prms.batch_size, num_entries_for_user)
+
+    labels_for_round = np.random.choice(user_labels, num_entries_to_choose)
+    feats_for_round = user_feats[
+        np.random.choice(user_feats.shape[0], num_entries_to_choose, replace=False), :
+    ]
+
+    return labels_for_round, feats_for_round
 
 
 def _gen_gausian_rand_noise(stndrd_dev, vec_len):
