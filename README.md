@@ -3,7 +3,7 @@
 This project implements a minimal server that implements federated
 learning and accepts messages from clients.
 
-## Setting up the test enviroment
+## Setting up the test environment
 
 
 * Install Python 3.6 or higher
