@@ -99,8 +99,9 @@ def _merge_all_user_weights(
     return merged_weights
 
 
-def flat_clip(sensitivity, vec):
-    return vec * min(1, sensitivity / np.linalg.norm(vec))
+def flat_clip(sensitivity, vecs):
+    for i in len(vecs):
+        vecs[i] = vecs[i] * min(1, sensitivity / np.linalg.norm(vecs[i]))
 
 
 def user_update_fed_avg(prms, round_user_features, round_user_labels, theta_0):
@@ -137,13 +138,12 @@ def user_update_fed_avg(prms, round_user_features, round_user_labels, theta_0):
             coef = classifier.coef_
             intercept = classifier.intercept_
 
-            # trained_weight = [coef, intercept]
+            trained_weight = [coef, intercept]
 
-            # NOTE: THIS IS WRONG! We also need to involve intercept somehow...
-            # theta = np.subtract(theta, coef)
+            trained_weight[0] -= theta_0
+            trained_weight[1] -= theta_0
 
-            difference = np.subtract(theta, theta_0)
-            theta = np.add(theta_0, flat_clip(prms.sensitivity, difference))
+            theta = np.add(theta_0, flat_clip(prms.sensitivity, trained_weight))
 
     return theta - theta_0
 
