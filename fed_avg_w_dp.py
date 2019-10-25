@@ -53,7 +53,6 @@ def run_fed_avg_with_dp(prms, data):
         # Query the selected users
         user_updates_buf.clear()
         for user_idx in random_user_idxs_sample:
-            print("Round: {} User: {}".format(round_t, user_idx))
             user_round_labels, user_round_feats = _get_data_for_user_for_round(
                 prms, data, user_idx
             )
@@ -78,6 +77,10 @@ def run_fed_avg_with_dp(prms, data):
 
     privacy_spent = _calc_privacy_spent()
     print("Total privacy spent from privacy budget: {}".format(privacy_spent))
+
+    return _get_coef_and_inter_slice_from_theta(
+        theta, prms.num_features, prms.num_labels
+    )
 
 
 # TODO: Give better function name...

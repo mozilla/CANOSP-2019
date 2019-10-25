@@ -5,6 +5,7 @@ from mozfldp.simulation_util import client_update, server_update
 from fed_avg_w_dp import run_fed_avg_with_dp, FedAvgWithDpParams
 
 import pandas as pd
+import sklearn
 from sklearn.model_selection import ParameterGrid, train_test_split
 import numpy as np
 
@@ -113,7 +114,54 @@ def fed_avg_with_dp(s_prms, data):
         s_prms[Runner.P_KEY_NOISE_SCALE],
     )
 
-    run_fed_avg_with_dp(prms, data)
+    labels, features = data
+    labels = np.array(labels)
+    features = np.array(features)
+
+    # Split the data into training and testing sets
+    feat_train, feat_test, label_train, label_test = train_test_split(
+        features, labels, test_size=0.4, random_state=0
+    )
+
+    # Since we are breaking the data into testing/training sets, we need to update the num_users parameter for the sim (since 100 users --> 60)
+    prms.num_users = len(feat_train)
+
+    training_data = [label_train, feat_train]
+
+    [trained_coef, trained_inter] = run_fed_avg_with_dp(prms, training_data)
+
+    clf = sklearn.linear_model.SGDClassifier(loss="hinge", penalty="l2")
+    clf.coef_ = trained_coef
+    clf.intercept_ = trained_inter
+    clf.classes_ = np.unique(labels)
+
+    print("trained coef: {}".format(trained_coef))
+    print("trained inter: {}".format(trained_inter))
+    print("unique labels: {}".format(clf.classes_))
+
+    print("test feats: {}".format(feat_test))
+    print("test labels: {}".format(label_test))
+
+    feat_test = np.array(feat_test)
+    label_test = np.array(label_test)
+
+    # Remove client dimension from arrays...
+    reshaped_feat_test = np.array(
+        np.reshape(
+            feat_test, (feat_test.shape[0] * feat_test.shape[1], feat_test.shape[2])
+        )
+    )
+    reshaped_label_test = np.array(np.reshape(label_test, label_test.size))
+
+    # Desperate hack to get the slices to be np arrays... No effect? How??
+    for i in range(len(reshaped_feat_test)):
+        reshaped_feat_test[i] = np.array(reshaped_feat_test[i], copy=True)
+
+    print("reshaped feat: {}".format(reshaped_feat_test))
+    print("reshaped label: {}".format(reshaped_label_test))
+
+    score = clf.score(reshaped_feat_test, reshaped_label_test)
+    print("Score: {}".format(score))
 
 
 class RunnerException(Exception):
