@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/mozilla/CANOSP-2019/tree/master.svg?style=svg)](https://circleci.com/gh/mozilla/CANOSP-2019/tree/master)
+
 # CANOSP-2019
 
 This project implements a minimal server that implements federated
