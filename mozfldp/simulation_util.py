@@ -1,6 +1,7 @@
 from sklearn.linear_model import SGDClassifier
 import numpy as np
 import random
+import mozfldp.server
 
 
 def client_update(init_weights, epochs, batch_size, features, labels):
@@ -8,11 +9,11 @@ def client_update(init_weights, epochs, batch_size, features, labels):
     Given the previous weights from the server, it does updates on the model
     and returns the new set of weights
 
-    init_weights: weights to initialize the training with 
+    init_weights: weights to initialize the training with
         ex: [weights of size num_classes*num_features, intercepts of size num_classes]
-    epochs: number of epochs to run the training for 
-    batch_size: the size of each batch of data while training 
-    features: a 2D array containing features for each sample 
+    epochs: number of epochs to run the training for
+    batch_size: the size of each batch of data while training
+    features: a 2D array containing features for each sample
         ex: [[feature1, feature2], [feature1, feature2], ...]
     label: an array containing the labels for the corresponding sample in "features"
         ex: [label1, label2, ...]
@@ -24,27 +25,26 @@ def client_update(init_weights, epochs, batch_size, features, labels):
     batches_labels = []
 
     for i in range(0, len(features), batch_size):
-        batches_features.append(features[i : i + batch_size])
-        batches_labels.append(labels[i : i + batch_size])
+        batches_features.append(features[i: i + batch_size])
+        batches_labels.append(labels[i: i + batch_size])
 
     coef = list(init_weights[0])
     intercept = list(init_weights[1])
 
-    # set max_iter to 1 so that each .fit() call only does one training step
-    classifier = SGDClassifier(loss="hinge", penalty="l2", max_iter=1)
+    server = mozfldp.server.Server()
+
+    # initialization is split out from construction so we have a
+    # little more flexbility in loading the pre-existing coef and
+    # intercept from storage
+    server.init(coef, intercept)
 
     for epoch in range(epochs):
         for i in range(len(batches_features)):
-            classifier.fit(
-                batches_features[i],
-                batches_labels[i],
-                coef_init=coef,
-                intercept_init=intercept,
-            )
+            result = server.fit(batches_features[i], batches_labels[i])
 
             # update the weights so for the next batch the new ones are used
-            coef = classifier.coef_
-            intercept = classifier.intercept_
+            coef = result["coef"]
+            intercept = result["intercept"]
 
     weights = [coef, intercept]
 
@@ -71,19 +71,19 @@ def server_update(
     """
     Calls clientUpdate to get the updated weights from clients, and applies Federated
     Averaging Algorithm to update the weight on server side
-    
-    init_weights: weights to initialize the training with 
+
+    init_weights: weights to initialize the training with
         ex: [weights of size num_classes*num_features, intercepts of size num_classes]
-    client_fraction: fraction of clients to use per round 
+    client_fraction: fraction of clients to use per round
     num_rounds: number of rounds used to update the weight
-    features: a 3D array containing features for each sample 
+    features: a 3D array containing features for each sample
         ex: [[[feature1, feature2], [feature1, feature2], ...]]
     label: an array containing the labels for the corresponding sample in "features"
         ex: [label1, label2, ...]
     epoch: number of epochs to run the training for
-    batch_size: the size of each batch of data while training 
+    batch_size: the size of each batch of data while training
     display_weight_per_round: a boolean value used to toggle the display of weight value per round
-    
+
     """
 
     # initialize the weights
@@ -112,31 +112,29 @@ def server_update(
             client_feature = features[i]
             client_label = labels[i]
 
-            coefs, intercept = client_update([coef, intercept], epoch, batch_size, client_feature, client_label)
-
-            client_coefs = append(
-                client_coefs,
-                coefs,
+            coefs, intercept = client_update(
+                [coef, intercept], epoch, batch_size, client_feature, client_label
             )
 
-            client_intercepts = append(
-                client_intercepts,
-                intercept
-            )
+            client_coefs = append(client_coefs, coefs)
+
+            client_intercepts = append(client_intercepts, intercept)
 
             num_samples.append(len(client_feature))
 
         # calculate the new server weights based on new weights coming from client
         new_coefs = np.zeros(init_weight[0].shape, dtype=np.float64, order="C")
         new_intercept = np.zeros(init_weight[1].shape, dtype=np.float64, order="C")
-        
+
         for i in range(len(client_coefs)):
             client_coef = client_coefs[i]
             client_intercept = client_intercepts[i]
 
             n_k = len(features[i])
             added_coef = [value * (n_k) / sum(num_samples) for value in client_coef]
-            added_intercept = [value * (n_k) / sum(num_samples) for value in client_intercept]
+            added_intercept = [
+                value * (n_k) / sum(num_samples) for value in client_intercept
+            ]
 
             new_coefs = np.add(new_coefs, added_coef)
             new_intercept = np.add(new_intercept, added_intercept)
