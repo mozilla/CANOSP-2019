@@ -38,9 +38,9 @@ def run_fed_avg_with_dp(prms, data):
         prms.num_users, prms.weight_mod
     )
     theta = None
-    theta_0 = _init_theta_from_moment_accountant(prms.num_features)
+    theta_0 = _init_theta_from_moment_accountant(prms.num_features, prms.num_labels)
     prev_theta = np.array(theta_0, copy=True)
-    user_sel_prob = 1 / prms.num_users
+    user_sel_prob = 1.0 / prms.num_users
     standard_dev = _calc_standard_dev(
         prms.noise_scale, prms.sensitivity, user_sel_prob, weight_sum
     )  # This feels weird being a constant...
@@ -89,7 +89,7 @@ def _merge_all_user_weights(
     """
 
     num_users_in_batch = len(user_updates_buf)
-    merged_weights = np.zeros(num_feats)
+    merged_weights = np.zeros(len(user_updates_buf[0]), dtype=np.float64, order="C")
 
     for i in range(num_users_in_batch):
         weighted_user_val = np.multiply(user_updates_buf[i], user_weights[i])
@@ -100,8 +100,10 @@ def _merge_all_user_weights(
 
 
 def flat_clip(sensitivity, vecs):
-    for i in len(vecs):
+    for i in range(len(vecs)):
         vecs[i] = vecs[i] * min(1, sensitivity / np.linalg.norm(vecs[i]))
+
+    return vecs
 
 
 def user_update_fed_avg(prms, round_user_features, round_user_labels, theta_0):
@@ -116,8 +118,6 @@ def user_update_fed_avg(prms, round_user_features, round_user_labels, theta_0):
     # For now just skip any batches that are smaller than batch_size
     num_batches = round_num_entries // prms.batch_size
 
-    coef = np.zeros((prms.num_labels, prms.num_features), dtype=np.float64, order="C")
-    intercept = np.zeros(prms.num_labels, dtype=np.float64, order="C")
     theta = np.array(theta_0, copy=True)
 
     # Split the round data into seperate batches
@@ -128,22 +128,19 @@ def user_update_fed_avg(prms, round_user_features, round_user_labels, theta_0):
     for _ in range(prms.num_epochs):
         for j in range(num_batches):
 
+            coef, inter = _get_coef_and_inter_slice_from_theta(
+                theta, prms.num_features, prms.num_labels
+            )
+
             classifier.fit(
                 batches_features[j],
                 batches_labels[j],
                 coef_init=coef,
-                intercept_init=intercept,
+                intercept_init=inter,
             )
 
-            coef = classifier.coef_
-            intercept = classifier.intercept_
-
-            trained_weight = [coef, intercept]
-
-            trained_weight[0] -= theta_0
-            trained_weight[1] -= theta_0
-
-            theta = np.add(theta_0, flat_clip(prms.sensitivity, trained_weight))
+            _set_coef_and_inter_on_theta(theta, coef, inter)
+            theta = theta_0 + flat_clip(prms.sensitivity, theta - theta_0)
 
     return theta - theta_0
 
@@ -154,9 +151,11 @@ def _get_random_selection_of_user_idxs(num_users):
     return np.random.choice(num_users, num_users // 5)
 
 
-def _init_theta_from_moment_accountant(num_features):
+def _init_theta_from_moment_accountant(num_features, num_labels):
     # Just a placeholder value for now
-    return [0.5] * num_features
+
+    # theta_0 is internally a linear array. We will use functon to get slices of the features/labels.
+    return np.zeros(num_labels * num_features + num_labels, dtype=np.float64, order="C")
 
 
 def _init_user_weights_and_weight_sum(num_users, weight_mod):
@@ -206,3 +205,23 @@ def _moments_accountant_accum_priv_spending(noise_scale):
 
 def _calc_privacy_spent():
     return -1  # TODO
+
+
+def _get_coef_and_inter_slice_from_theta(theta, num_features, num_labels):
+    coef_len = num_features * num_labels
+    coef_arr_slices = []
+
+    for i in range(0, coef_len, num_features):
+        coef_arr_slices.append(theta[i : i + num_features])
+
+    return coef_arr_slices, theta[coef_len:]
+
+
+def _set_coef_and_inter_on_theta(theta, coef_arr_slices, inter):
+    num_features = len(coef_arr_slices[0])
+    coef_len = num_features * len(inter)
+
+    for i, slice in enumerate(coef_arr_slices):
+        theta[i : i + num_features] = coef_arr_slices[i]
+
+    theta[coef_len:] = inter
