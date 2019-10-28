@@ -1,6 +1,7 @@
 from sklearn.linear_model import SGDClassifier
 import numpy as np
 import random
+import mozfldp.server as server
 
 
 def client_update(init_weights, epochs, batch_size, features, labels):
@@ -8,11 +9,11 @@ def client_update(init_weights, epochs, batch_size, features, labels):
     Given the previous weights from the server, it does updates on the model
     and returns the new set of weights
 
-    init_weights: weights to initialize the training with 
+    init_weights: weights to initialize the training with
         ex: [weights of size num_classes*num_features, intercepts of size num_classes]
-    epochs: number of epochs to run the training for 
-    batch_size: the size of each batch of data while training 
-    features: a 2D array containing features for each sample 
+    epochs: number of epochs to run the training for
+    batch_size: the size of each batch of data while training
+    features: a 2D array containing features for each sample
         ex: [[feature1, feature2], [feature1, feature2], ...]
     label: an array containing the labels for the corresponding sample in "features"
         ex: [label1, label2, ...]
@@ -23,10 +24,9 @@ def client_update(init_weights, epochs, batch_size, features, labels):
     batches_features = []
     batches_labels = []
 
-
     for i in range(0, len(features), batch_size):
-        batches_features.append(features[i : i + batch_size])
-        batches_labels.append(labels[i : i + batch_size])
+        batches_features.append(features[i: i + batch_size])
+        batches_labels.append(labels[i: i + batch_size])
 
     coef = list(init_weights[0])
     intercept = list(init_weights[1])
@@ -41,7 +41,7 @@ def client_update(init_weights, epochs, batch_size, features, labels):
                 batches_features[i],
                 batches_labels[i],
                 # list of all possible classes - need to get all unique values instead of hardcoding
-                classes=[0,1,2,3,4,5,6,7,8,9]       
+                classes=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
             )
 
             # update the weights so for the next batch the new ones are used
@@ -51,13 +51,6 @@ def client_update(init_weights, epochs, batch_size, features, labels):
     weights = [coef, intercept]
 
     return weights
-
-
-def append(list, element):
-    """
-    helper function to append array into array in numpy
-    """
-    return np.concatenate((list, [element])) if list is not None else [element]
 
 
 def server_update(
@@ -73,19 +66,19 @@ def server_update(
     """
     Calls clientUpdate to get the updated weights from clients, and applies Federated
     Averaging Algorithm to update the weight on server side
-    
-    init_weights: weights to initialize the training with 
+
+    init_weights: weights to initialize the training with
         ex: [weights of size num_classes*num_features, intercepts of size num_classes]
-    client_fraction: fraction of clients to use per round 
+    client_fraction: fraction of clients to use per round
     num_rounds: number of rounds used to update the weight
-    features: a 3D array containing features for each sample 
+    features: a 3D array containing features for each sample
         ex: [[[feature1, feature2], [feature1, feature2], ...]]
     label: an array containing the labels for the corresponding sample in "features"
         ex: [label1, label2, ...]
     epoch: number of epochs to run the training for
-    batch_size: the size of each batch of data while training 
+    batch_size: the size of each batch of data while training
     display_weight_per_round: a boolean value used to toggle the display of weight value per round
-    
+
     """
     # initialize the weights
     coef = list(init_weight[0])
@@ -96,6 +89,8 @@ def server_update(
     # fraction of clients
     C = client_fraction
 
+    serv = server.Server(coef, intercept, len(features), client_fraction)
+
     # use to generate n_k so that the sum of n_k equals to n
     for i in range(num_rounds):
         # calculate the number of clients used in this round
@@ -103,52 +98,23 @@ def server_update(
         # random set of m client's index
         user_ids = np.array(random.sample(range(client_num), m))
 
-        # print(user_ids)
-        num_samples = []
-
-        # grab all the weights from clients
-        client_coefs = None
-        client_intercepts = None
-
         for user_id in user_ids:
             client_feature = features[user_id]
+            num_features = len(client_feature)
             client_label = labels[user_id]
-
-            coefs, intercept = client_update([coef, intercept], epoch, batch_size, client_feature, client_label)
-
-            client_coefs = append(
-                client_coefs,
-                coefs,
+            coefs, intercept = client_update(
+                [coef, intercept], epoch, batch_size, client_feature, client_label
             )
 
-            client_intercepts = append(
-                client_intercepts,
-                intercept
-            )
+            serv.send_weights(coefs, intercept, num_features)
 
-            num_samples.append(len(client_feature))
+    coef, intercept = serv.compute_new_weights()
 
-        # calculate the new server weights based on new weights coming from client
-        new_coefs = np.zeros(init_weight[0].shape, dtype=np.float64, order="C")
-        new_intercept = np.zeros(init_weight[1].shape, dtype=np.float64, order="C")
-        
-        for index, user_id in enumerate(user_ids):
-            client_coef = client_coefs[index]
-            client_intercept = client_intercepts[index]
+    # TODO: extract down to end of function so that we can construct
+    # a new SGD using new coef+intercept data.
 
-            n_k = num_samples[index]
-            added_coef = [value * (n_k) / sum(num_samples) for value in client_coef]
-            added_intercept = [value * (n_k) / sum(num_samples) for value in client_intercept]
-
-            new_coefs = np.add(new_coefs, added_coef)
-            new_intercept = np.add(new_intercept, added_intercept)
-
-        # update the server weights to newly calculated weights
-        coef = new_coefs
-        intercept = new_intercept
-
-        if display_weight_per_round:
-            print("Updated Weights: ", coef, intercept)
+    # Reconstruct a new classifier so that we can test the accuracy
+    # using new coef and intercept
 
     # load coefficients and intercept into the classifier
     clf = SGDClassifier(loss="log")

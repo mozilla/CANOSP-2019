@@ -4,8 +4,7 @@
 
 import pytest
 
-def test_simulation_util():
-    pass
+def test_simulation_util(): pass
 
 
 @pytest.mark.skip("some reason goes here")
