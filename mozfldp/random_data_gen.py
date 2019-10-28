@@ -62,6 +62,7 @@ def transform_data_for_simulator_format(df, g_prms):
         client_feats = [list(feat) for feat in client_feats]
         
         feats.append(client_feats)
+        print("Loading data for client", i)
 
     return (labels, feats)
 
