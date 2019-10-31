@@ -72,15 +72,17 @@ def run_fed_avg_with_dp(prms, data):
         theta = prev_theta + merged_user_values + rand_gauss_noise
         prev_theta = theta
 
-        print("Theta for round {}: \n {}".format(round_t, theta))
+        print("Theta ([coef, inter] for round {}: \n {}".format(round_t, theta))
         _moments_accountant_accum_priv_spending(prms.noise_scale)
 
     privacy_spent = _calc_privacy_spent()
     print("Total privacy spent from privacy budget: {}".format(privacy_spent))
 
-    return _get_coef_and_inter_slice_from_theta(
+    coef_slice, inter_slice = _get_coef_and_inter_slice_from_theta(
         theta, prms.num_features, prms.num_labels
     )
+
+    return np.array(coef_slice),  np.array(inter_slice)
 
 
 # TODO: Give better function name...
