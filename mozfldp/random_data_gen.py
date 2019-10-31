@@ -75,7 +75,7 @@ def _gen_blob_data(g_prms):
     )
 
     df = pd.DataFrame(feat_arr)
-    _evenly_add_labels_to_data(df, g_prms)
+    df["labels"] = label_idxs
     return df
 
 
