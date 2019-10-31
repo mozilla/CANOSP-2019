@@ -112,6 +112,7 @@ def fed_avg_with_dp(s_prms, data):
         s_prms[Runner.P_KEY_WEIGHT_MOD],
         s_prms[Runner.P_KEY_SENSITIVITY],
         s_prms[Runner.P_KEY_NOISE_SCALE],
+        42,  # Hardcode rand_seed until PR #27 (Runner random seed param) gets merged in
     )
 
     labels, features = data
@@ -119,6 +120,7 @@ def fed_avg_with_dp(s_prms, data):
     features = np.array(features)
 
     # Split the data into training and testing sets
+    # TODO: Replace seed of 0 with random seed param
     feat_train, feat_test, label_train, label_test = train_test_split(
         features, labels, test_size=0.4, random_state=0
     )
@@ -129,7 +131,8 @@ def fed_avg_with_dp(s_prms, data):
     training_data = [label_train, feat_train]
     [trained_coef, trained_inter] = run_fed_avg_with_dp(prms, training_data)
 
-    clf = sklearn.linear_model.SGDClassifier(loss="hinge", penalty="l2")
+    # TODO: Replace rand_seed hardcode
+    clf = sklearn.linear_model.SGDClassifier(loss="hinge", penalty="l2", random_state=42)
     clf.coef_ = trained_coef
     clf.intercept_ = trained_inter
     clf.classes_ = np.unique(labels)

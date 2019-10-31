@@ -15,6 +15,7 @@ class FedAvgWithDpParams:
         weight_mod,
         sensitivity,
         noise_scale,
+        rand_seed,
     ):
         self.num_users = num_users
         self.num_features = num_features
@@ -25,6 +26,7 @@ class FedAvgWithDpParams:
         self.weight_mod = weight_mod  # w_hat
         self.sensitivity = sensitivity
         self.noise_scale = noise_scale
+        self.rand_seed = rand_seed
 
 
 def run_fed_avg_with_dp(prms, data):
@@ -33,6 +35,10 @@ def run_fed_avg_with_dp(prms, data):
     prms: The parameters needed to run (FedAvgWithDpParams)
     data: Data to train on. In the format of: ([user_1_labels, user_2_labels, ...], [user_1_feats, user_2_feats, ...])
     """
+
+    # Fix the seed for all rng calls
+    np.random.seed(prms.rand_seed)
+    random.seed(prms.rand_seed)
 
     user_weights, weight_sum = _init_user_weights_and_weight_sum(
         prms.num_users, prms.weight_mod
@@ -116,7 +122,7 @@ def user_update_fed_avg(prms, round_user_features, round_user_labels, theta_0):
     batches_features = []
     batches_labels = []
 
-    classifier = SGDClassifier(loss="hinge", penalty="l2", max_iter=1)
+    classifier = SGDClassifier(loss="hinge", penalty="l2", max_iter=1, random_state=prms.rand_seed)
 
     round_num_entries = len(round_user_features)
 
