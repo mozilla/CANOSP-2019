@@ -12,7 +12,6 @@ import argparse
 # we should package up the canosp project as a pypi project so we can
 # just import it like any other module.
 
-from mozfldp.simulation_util import server_update  # noqa
 
 
 def append(list, element):
@@ -95,7 +94,6 @@ class ServerFacade:
         return self._coef, self._intercept
 
 
-server = ServerFacade()
 
 # TODO: you'll need to add server routes for `update_classifier` and
 # `classify` to allow them to be invoked over the web.
@@ -109,8 +107,6 @@ def client_update(client_id):
     # ingested at the server.
     msg = "Client ID: [{}].\nJSON Payload: {}".format(client_id, str(payload))
     print(msg)
-
-    server.ingest_client_data(payload)
 
     # TODO: you probably want to send some kind of useful feedback to
     # clients that the data was ingested by the server

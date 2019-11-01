@@ -81,15 +81,15 @@ def server_update(
 
     """
     # initialize the weights
-    coef = list(init_weight[0])
-    intercept = list(init_weight[1])
+    coef = init_weight[0]
+    intercept = init_weight[1]
 
     # number of clients
     client_num = len(features)
     # fraction of clients
     C = client_fraction
 
-    serv = server.Server(coef, intercept, len(features), client_fraction)
+    serv = server.ServerFacade(coef, intercept, client_num, client_fraction)
 
     # use to generate n_k so that the sum of n_k equals to n
     for i in range(num_rounds):
