@@ -132,15 +132,17 @@ def fed_avg_with_dp(s_prms, data):
     [trained_coef, trained_inter] = run_fed_avg_with_dp(prms, training_data)
 
     # TODO: Replace rand_seed hardcode
-    clf = sklearn.linear_model.SGDClassifier(loss="hinge", penalty="l2", random_state=42)
+    clf = sklearn.linear_model.SGDClassifier(
+        loss="hinge", penalty="l2", random_state=42
+    )
     clf.coef_ = trained_coef
     clf.intercept_ = trained_inter
     clf.classes_ = np.unique(labels)
 
     # Remove client dimension from arrays...
     reshaped_feat_test = np.reshape(
-            feat_test, (feat_test.shape[0] * feat_test.shape[1], feat_test.shape[2])
-            )
+        feat_test, (feat_test.shape[0] * feat_test.shape[1], feat_test.shape[2])
+    )
 
     reshaped_label_test = np.reshape(label_test, label_test.size)
 

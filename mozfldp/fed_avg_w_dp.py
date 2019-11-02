@@ -89,7 +89,7 @@ def run_fed_avg_with_dp(prms, data):
         theta, prms.num_features, prms.num_labels
     )
 
-    return np.array(coef_slice),  np.array(inter_slice)
+    return np.array(coef_slice), np.array(inter_slice)
 
 
 # TODO: Give better function name...
@@ -121,7 +121,9 @@ def user_update_fed_avg(prms, round_user_features, round_user_labels, theta_0):
     batches_features = []
     batches_labels = []
 
-    classifier = SGDClassifier(loss="hinge", penalty="l2", max_iter=1, random_state=prms.rand_seed)
+    classifier = SGDClassifier(
+        loss="hinge", penalty="l2", max_iter=1, random_state=prms.rand_seed
+    )
 
     round_num_entries = len(round_user_features)
 
@@ -197,13 +199,18 @@ def _get_data_for_user_for_round(prms, data, user_id):
     num_entries_for_user = len(user_labels)
     num_entries_to_choose = random.randint(prms.batch_size, num_entries_for_user)
 
-    return _choose_n_labels_and_feautures_from_user_labels_and_data(user_labels, user_feats, num_entries_to_choose)
+    return _choose_n_labels_and_feautures_from_user_labels_and_data(
+        user_labels, user_feats, num_entries_to_choose
+    )
 
 
 def _gen_gausian_rand_noise(stndrd_dev, vec_len):
     return np.random.normal(loc=0.0, scale=stndrd_dev, size=vec_len)
 
-def _choose_n_labels_and_feautures_from_user_labels_and_data(user_labels, user_feats, num_entries_to_choose):
+
+def _choose_n_labels_and_feautures_from_user_labels_and_data(
+    user_labels, user_feats, num_entries_to_choose
+):
     labels_for_round = []
     feats_for_round = []
 
@@ -214,7 +221,6 @@ def _choose_n_labels_and_feautures_from_user_labels_and_data(user_labels, user_f
         feats_for_round.append(user_feats[i])
 
     return labels_for_round, feats_for_round
-
 
 
 def _moments_accountant_accum_priv_spending(noise_scale):
