@@ -75,6 +75,7 @@ def run_fed_avg_with_dp(prms, data):
         rand_gauss_noise = _gen_gausian_rand_noise(
             standard_dev, len(merged_user_values)
         )
+
         theta = prev_theta + merged_user_values + rand_gauss_noise
         prev_theta = theta
 
@@ -110,11 +111,9 @@ def _merge_all_user_weights(
     return merged_weights
 
 
-def flat_clip(sensitivity, vecs):
-    for i in range(len(vecs)):
-        vecs[i] = vecs[i] * min(1, sensitivity / np.linalg.norm(vecs[i]))
-
-    return vecs
+def flat_clip(sensitivity, vec):
+    vec *= min(1, sensitivity / np.linalg.norm(vec))
+    return vec
 
 
 def user_update_fed_avg(prms, round_user_features, round_user_labels, theta_0):
@@ -150,7 +149,7 @@ def user_update_fed_avg(prms, round_user_features, round_user_labels, theta_0):
                 intercept_init=inter,
             )
 
-            _set_coef_and_inter_on_theta(theta, coef, inter)
+            _set_coef_and_inter_on_theta(theta, classifier.coef_, classifier.intercept_)
             theta = theta_0 + flat_clip(prms.sensitivity, theta - theta_0)
 
     return theta - theta_0
@@ -198,16 +197,24 @@ def _get_data_for_user_for_round(prms, data, user_id):
     num_entries_for_user = len(user_labels)
     num_entries_to_choose = random.randint(prms.batch_size, num_entries_for_user)
 
-    labels_for_round = np.random.choice(user_labels, num_entries_to_choose)
-    feats_for_round = user_feats[
-        np.random.choice(user_feats.shape[0], num_entries_to_choose, replace=False), :
-    ]
-
-    return labels_for_round, feats_for_round
+    return _choose_n_labels_and_feautures_from_user_labels_and_data(user_labels, user_feats, num_entries_to_choose)
 
 
 def _gen_gausian_rand_noise(stndrd_dev, vec_len):
     return np.random.normal(loc=0.0, scale=stndrd_dev, size=vec_len)
+
+def _choose_n_labels_and_feautures_from_user_labels_and_data(user_labels, user_feats, num_entries_to_choose):
+    labels_for_round = []
+    feats_for_round = []
+
+    chosen_idxs = np.random.choice(len(user_labels), size=num_entries_to_choose)
+
+    for i in chosen_idxs:
+        labels_for_round.append(user_labels[i])
+        feats_for_round.append(user_feats[i])
+
+    return labels_for_round, feats_for_round
+
 
 
 def _moments_accountant_accum_priv_spending(noise_scale):
@@ -233,6 +240,7 @@ def _set_coef_and_inter_on_theta(theta, coef_arr_slices, inter):
     coef_len = num_features * len(inter)
 
     for i, slice in enumerate(coef_arr_slices):
-        theta[i : i + num_features] = coef_arr_slices[i]
+        coef_start_idx = i * num_features
+        theta[coef_start_idx : coef_start_idx + num_features] = coef_arr_slices[i]
 
     theta[coef_len:] = inter
