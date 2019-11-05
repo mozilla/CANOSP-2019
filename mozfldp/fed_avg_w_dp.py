@@ -51,6 +51,7 @@ def run_fed_avg_with_dp(prms, data):
         prms.noise_scale, prms.sensitivity, user_sel_prob, weight_sum
     )  # This feels weird being a constant...
     user_updates_buf = []
+    num_theta_elems = prms.num_features * prms.num_labels + prms.num_labels
 
     for round_t in range(prms.num_rounds):
         # Pick a random set of users to sample
@@ -70,7 +71,7 @@ def run_fed_avg_with_dp(prms, data):
 
         # Merge (fc)
         merged_user_values = _merge_all_user_thetas(
-            user_sel_prob, weight_sum, user_updates_buf, user_weights
+            user_sel_prob, weight_sum, user_updates_buf, user_weights, num_theta_elems
         )  # Note that we start at t + 1
 
         # Note: Assuming for now that S is defined before we run
@@ -95,13 +96,13 @@ def run_fed_avg_with_dp(prms, data):
 
 
 # TODO: Give better function name...
-def _merge_all_user_thetas(user_sel_prob, weight_sum, user_updates_buf, user_weights):
+def _merge_all_user_thetas(user_sel_prob, weight_sum, user_updates_buf, user_weights, num_theta_elems):
     """
     Merge all user updates for a round into a single delta (vector).
     """
 
     num_users_in_batch = len(user_updates_buf)
-    merged_weights = np.zeros(len(user_updates_buf[0]), dtype=np.float64, order="C")
+    merged_weights = np.zeros(num_theta_elems, dtype=np.float64, order="C")
 
     for i in range(num_users_in_batch):
         weighted_user_val = np.multiply(user_updates_buf[i], user_weights[i])
