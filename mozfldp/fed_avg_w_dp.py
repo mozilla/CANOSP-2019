@@ -68,7 +68,7 @@ def run_fed_avg_with_dp(prms, data):
 
         # Merge (fc)
         merged_user_values = _merge_all_user_weights(
-            prms.num_features, user_sel_prob, weight_sum, user_updates_buf, user_weights
+            user_sel_prob, weight_sum, user_updates_buf, user_weights
         )  # Note that we start at t + 1
 
         # Note: Assuming for now that S is defined before we run
@@ -93,9 +93,7 @@ def run_fed_avg_with_dp(prms, data):
 
 
 # TODO: Give better function name...
-def _merge_all_user_weights(
-    num_feats, user_sel_prob, weight_sum, user_updates_buf, user_weights
-):
+def _merge_all_user_weights(user_sel_prob, weight_sum, user_updates_buf, user_weights):
     """
     Merge all user updates for a round into a single delta (vector).
     """
