@@ -46,7 +46,7 @@ def run_fed_avg_with_dp(prms, data):
     theta = None
     theta_0 = _init_theta_from_moment_accountant(prms.num_features, prms.num_labels)
     prev_theta = np.array(theta_0, copy=True)
-    user_sel_prob = 1.0 / prms.num_users
+    user_sel_prob = _calc_user_sel_proc(prms.num_users, 30)
     standard_dev = _calc_standard_dev(
         prms.noise_scale, prms.sensitivity, user_sel_prob, weight_sum
     )  # This feels weird being a constant...
@@ -54,7 +54,9 @@ def run_fed_avg_with_dp(prms, data):
 
     for round_t in range(prms.num_rounds):
         # Pick a random set of users to sample
-        random_user_idxs_sample = _get_random_selection_of_user_idxs(prms.num_users)
+        random_user_idxs_sample = _get_random_selection_of_user_idxs(
+            prms.num_users, user_sel_prob
+        )
 
         # Query the selected users
         user_updates_buf.clear()
@@ -155,10 +157,18 @@ def user_update_fed_avg(prms, round_user_features, round_user_labels, theta_0):
     return theta - theta_0
 
 
-def _get_random_selection_of_user_idxs(num_users):
-    # For now just randomly pick 1/5th of the users.
-    # TODO: Change this later!
-    return np.random.choice(num_users, num_users // 5)
+def _get_random_selection_of_user_idxs(num_users, user_sel_prob):
+    # This is definitely not the optimal way to do this, but it gets the job done
+    # Very dumb brute force impl...
+
+    sel_user_idxs = []
+
+    for i in range(num_users):
+        rand_val = random.random()
+        if rand_val < user_sel_prob:
+            sel_user_idxs.append(i)
+
+    return sel_user_idxs
 
 
 def _init_theta_from_moment_accountant(num_features, num_labels):
@@ -169,7 +179,9 @@ def _init_theta_from_moment_accountant(num_features, num_labels):
 
 
 def _init_user_weights_and_weight_sum(num_users, weight_mod):
-    weights = []
+    weights = (
+        []
+    )  # NOTE: Since user weights appear to be constant for all users, we may not need an array of weights.
     init_weight = min(num_users / weight_mod, 1)
 
     for _ in range(num_users):
@@ -219,6 +231,10 @@ def _choose_n_labels_and_feautures_from_user_labels_and_data(
         feats_for_round.append(user_feats[i])
 
     return labels_for_round, feats_for_round
+
+
+def _calc_user_sel_proc(num_users, expected_num_users_picked_per_round):
+    return (1 / num_users) * expected_num_users_picked_per_round
 
 
 def _moments_accountant_accum_priv_spending(noise_scale):
