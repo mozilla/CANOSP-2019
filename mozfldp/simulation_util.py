@@ -3,8 +3,7 @@ import numpy as np
 import random
 
 
-def client_update(init_weights, epochs, batch_size, features, labels,
-        all_classes):
+def client_update(init_weights, epochs, batch_size, features, labels, all_classes):
     """
     Given the previous weights from the server, it does updates on the model
     and returns the new set of weights
@@ -26,7 +25,6 @@ def client_update(init_weights, epochs, batch_size, features, labels,
     batches_features = []
     batches_labels = []
 
-
     for i in range(0, len(features), batch_size):
         batches_features.append(features[i : i + batch_size])
         batches_labels.append(labels[i : i + batch_size])
@@ -44,7 +42,7 @@ def client_update(init_weights, epochs, batch_size, features, labels,
                 batches_features[i],
                 batches_labels[i],
                 # list of all possible classes - need to get all unique values instead of hardcoding
-                classes=all_classes
+                classes=all_classes,
             )
 
             # update the weights so for the next batch the new ones are used
@@ -120,31 +118,34 @@ def server_update(
             client_feature = features[user_id]
             client_label = labels[user_id]
 
-            coefs, intercept = client_update([coef, intercept], epoch, batch_size, client_feature, client_label, all_classes)
-
-            client_coefs = append(
-                client_coefs,
-                coefs,
+            coefs, intercept = client_update(
+                [coef, intercept],
+                epoch,
+                batch_size,
+                client_feature,
+                client_label,
+                all_classes,
             )
 
-            client_intercepts = append(
-                client_intercepts,
-                intercept
-            )
+            client_coefs = append(client_coefs, coefs)
+
+            client_intercepts = append(client_intercepts, intercept)
 
             num_samples.append(len(client_feature))
 
         # calculate the new server weights based on new weights coming from client
         new_coefs = np.zeros(init_weight[0].shape, dtype=np.float64, order="C")
         new_intercept = np.zeros(init_weight[1].shape, dtype=np.float64, order="C")
-        
+
         for index, user_id in enumerate(user_ids):
             client_coef = client_coefs[index]
             client_intercept = client_intercepts[index]
 
             n_k = num_samples[index]
             added_coef = [value * (n_k) / sum(num_samples) for value in client_coef]
-            added_intercept = [value * (n_k) / sum(num_samples) for value in client_intercept]
+            added_intercept = [
+                value * (n_k) / sum(num_samples) for value in client_intercept
+            ]
 
             new_coefs = np.add(new_coefs, added_coef)
             new_intercept = np.add(new_intercept, added_intercept)
