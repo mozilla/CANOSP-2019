@@ -3,7 +3,8 @@ import numpy as np
 import random
 
 
-def client_update(init_weights, epochs, batch_size, features, labels):
+def client_update(init_weights, epochs, batch_size, features, labels,
+        all_classes):
     """
     Given the previous weights from the server, it does updates on the model
     and returns the new set of weights
@@ -14,8 +15,10 @@ def client_update(init_weights, epochs, batch_size, features, labels):
     batch_size: the size of each batch of data while training 
     features: a 2D array containing features for each sample 
         ex: [[feature1, feature2], [feature1, feature2], ...]
-    label: an array containing the labels for the corresponding sample in "features"
+    labels: an array containing the labels for the corresponding sample in "features"
         ex: [label1, label2, ...]
+    all_classes: an array containing the unique labels across the entire
+    dataset (`labels` may not contain all of these)
     """
 
     # split the data into batches by given batch_size
@@ -41,7 +44,7 @@ def client_update(init_weights, epochs, batch_size, features, labels):
                 batches_features[i],
                 batches_labels[i],
                 # list of all possible classes - need to get all unique values instead of hardcoding
-                classes=[0,1,2,3,4,5,6,7,8,9]       
+                classes=all_classes
             )
 
             # update the weights so for the next batch the new ones are used
@@ -71,7 +74,7 @@ def server_update(
     display_weight_per_round,
 ):
     """
-    Calls clientUpdate to get the updated weights from clients, and applies Federated
+    Calls client_update to get the updated weights from clients, and applies Federated
     Averaging Algorithm to update the weight on server side
     
     init_weights: weights to initialize the training with 
@@ -80,7 +83,7 @@ def server_update(
     num_rounds: number of rounds used to update the weight
     features: a 3D array containing features for each sample 
         ex: [[[feature1, feature2], [feature1, feature2], ...]]
-    label: an array containing the labels for the corresponding sample in "features"
+    labels: an array containing the labels for the corresponding sample in "features"
         ex: [label1, label2, ...]
     epoch: number of epochs to run the training for
     batch_size: the size of each batch of data while training 
@@ -90,6 +93,9 @@ def server_update(
     # initialize the weights
     coef = list(init_weight[0])
     intercept = list(init_weight[1])
+
+    # unique classes in the dataset
+    all_classes = np.unique(labels)
 
     # number of clients
     client_num = len(features)
@@ -114,7 +120,7 @@ def server_update(
             client_feature = features[user_id]
             client_label = labels[user_id]
 
-            coefs, intercept = client_update([coef, intercept], epoch, batch_size, client_feature, client_label)
+            coefs, intercept = client_update([coef, intercept], epoch, batch_size, client_feature, client_label, all_classes)
 
             client_coefs = append(
                 client_coefs,
