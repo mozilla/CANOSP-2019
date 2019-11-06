@@ -210,7 +210,7 @@ def _get_data_for_user_for_round(prms, data, user_id):
     num_entries_for_user = len(user_labels)
     num_entries_to_choose = random.randint(prms.batch_size, num_entries_for_user)
 
-    return _choose_n_labels_and_feautures_from_user_labels_and_data(
+    return _choose_n_labels_and_features_from_user_labels_and_data(
         user_labels, user_feats, num_entries_to_choose
     )
 
@@ -219,13 +219,13 @@ def _gen_gausian_rand_noise(stndrd_dev, vec_len):
     return np.random.normal(loc=0.0, scale=stndrd_dev, size=vec_len)
 
 
-def _choose_n_labels_and_feautures_from_user_labels_and_data(
-    user_labels, user_feats, num_entries_to_choose
+def _choose_n_labels_and_features_from_user_labels_and_data(
+    user_labels, user_feats, n
 ):
     labels_for_round = []
     feats_for_round = []
 
-    chosen_idxs = np.random.choice(len(user_labels), size=num_entries_to_choose)
+    chosen_idxs = np.random.choice(len(user_labels), size=n)
 
     for i in chosen_idxs:
         labels_for_round.append(user_labels[i])
