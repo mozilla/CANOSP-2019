@@ -44,9 +44,17 @@ class SGDModel:
         return "SGDModel(\n{}\n)".format(self.classifier.__repr__())
 
     def set_weights(self, coef, intercept):
-        """Update the current model weights."""
+        """Update the current model weights.
+
+        Note that this leaves the iteration counters as-is. These are used
+        internally in computing an adaptive learning rate.
+        """
         self.classifier.coef_ = coef
         self.classifier.intercept_ = intercept
+
+    def get_weights(self):
+        """Return the current model weights as (coef, intercept)."""
+        return (self.classifier.coef_, self.classifier.intercept_)
 
     def minibatch_update(self, X, y):
         """Run a single weight update on the given minibatch."""

@@ -27,15 +27,29 @@ class Client:
         # TODO
         pass
 
-    def update_and_submit_weights(self, current_weights, num_epochs, batch_size):
+    def _run_model_update_step(self, X, y):
+        """Run a single GD update step on the given data minibatch."""
+        self._model.minibatch_update(X, y)
+
+    def update_and_submit_weights(self, current_coef, current_intercept, num_epochs, batch_size):
         """Update the current model weights for FL using the client's data.
 
         Resulting weights are submitted to the server.
         """
-        # TODO
-        pass
+        self._model.set_weights(current_coef, current_intercept)
 
-    def update_and_submit_weights_dp(self, current_weights, num_epochs, batch_size):
+        # TODO: split data into batches.
+
+        # TODO: update weights across batches and epochs.
+        for epoch in range(num_epochs):
+            for i in range(num_batches):
+                self._run_model_update_step(batch_features[i], batch_labels[i])
+
+        # TODO: submit new weights to the server via API request.
+        # self._model.get_weights() -> server
+
+
+    def update_and_submit_weights_dp(self, current_coef, current_intercept, num_epochs, batch_size):
         """Update the current model weights for FL with DP using the client's data.
 
         Resulting weights are submitted to the server.
