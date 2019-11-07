@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import numpy as np
 from mozfldp import fed_avg_w_dp
 
 
@@ -90,6 +91,32 @@ class TestSelectingRandomUserIdxs:
             TestSelectingRandomUserIdxs.DEFAULT_NUM_USERS, 1
         )
         assert len(res) == TestSelectingRandomUserIdxs.DEFAULT_NUM_USERS
+
+
+#### Small tests ####
+
+
+def test_setting_theta_values_are_set_properly():
+    num_feats = 3
+    num_labels = 2
+
+    coefs = [[1, 2, 3], [4, 5, 6]]
+
+    intercepts = [7, 8]
+
+    theta_len = (num_feats * num_labels) + num_labels
+    theta = np.zeros(theta_len)
+
+    fed_avg_w_dp._set_coef_and_inter_on_theta(theta, coefs, intercepts)
+    theta_coefs, theta_intercepts = fed_avg_w_dp._get_coef_and_inter_slice_from_theta(
+        theta, num_feats, num_labels
+    )
+
+    assert np.array_equal(coefs, theta_coefs)
+    assert np.array_equal(intercepts, theta_intercepts)
+
+
+#### Helper functions ####
 
 
 def _lists_equal(l1, l2):
