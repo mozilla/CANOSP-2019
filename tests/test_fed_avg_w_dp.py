@@ -93,6 +93,31 @@ class TestSelectingRandomUserIdxs:
         assert len(res) == TestSelectingRandomUserIdxs.DEFAULT_NUM_USERS
 
 
+class TestFlatClipping:
+
+    FLAT_CLIP_TEST_VEC = np.array([3.0, 4.0])
+
+    def test_flatclipping_will_never_increase_the_magnitude(self):
+        extreme_sensitivity = 50000.0
+
+        old_norm = np.linalg.norm(TestFlatClipping.FLAT_CLIP_TEST_VEC)
+        clipped_vec = fed_avg_w_dp.flat_clip(
+            extreme_sensitivity, TestFlatClipping.FLAT_CLIP_TEST_VEC
+        )
+        new_norm = np.linalg.norm(clipped_vec)
+
+        assert new_norm == old_norm
+
+    def test_flatclipping_val_test(self):
+        sensitivity = 1.0
+        clipped_vec = fed_avg_w_dp.flat_clip(
+            sensitivity, TestFlatClipping.FLAT_CLIP_TEST_VEC
+        )
+
+        print(clipped_vec)
+        assert np.allclose(clipped_vec, np.array([0.6, 0.8]))
+
+
 #### Small tests ####
 
 
