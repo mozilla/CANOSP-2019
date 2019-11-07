@@ -12,7 +12,7 @@ class FedAvgWithDpParams:
         num_rounds,
         batch_size,
         num_epochs,
-        weight_mod,
+        user_weight_cap,
         sensitivity,
         noise_scale,
         rand_seed,
@@ -23,7 +23,7 @@ class FedAvgWithDpParams:
         self.num_rounds = num_rounds
         self.batch_size = batch_size
         self.num_epochs = num_epochs
-        self.weight_mod = weight_mod  # w_hat
+        self.user_weight_cap = user_weight_cap  # w_hat
         self.sensitivity = sensitivity
         self.noise_scale = noise_scale
         self.rand_seed = rand_seed
@@ -41,7 +41,7 @@ def run_fed_avg_with_dp(prms, data):
     random.seed(prms.rand_seed)
 
     user_weights, weight_sum = _init_user_weights_and_weight_sum(
-        prms.num_users, prms.weight_mod
+        prms.num_users, prms.user_weight_cap
     )
     theta = None
     theta_0 = _init_theta_from_moment_accountant(prms.num_features, prms.num_labels)
@@ -179,11 +179,11 @@ def _init_theta_from_moment_accountant(num_features, num_labels):
     return np.zeros(num_labels * num_features + num_labels, dtype=np.float64, order="C")
 
 
-def _init_user_weights_and_weight_sum(num_users, weight_mod):
+def _init_user_weights_and_weight_sum(num_users, user_weight_cap):
     weights = (
         []
     )  # NOTE: Since user weights appear to be constant for all users, we may not need an array of weights.
-    init_weight = min(num_users / weight_mod, 1)
+    init_weight = min(num_users / user_weight_cap, 1)
 
     for _ in range(num_users):
         weights.append(init_weight)
