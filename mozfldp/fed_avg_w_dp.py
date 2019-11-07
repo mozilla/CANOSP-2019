@@ -63,7 +63,7 @@ def run_fed_avg_with_dp(prms, data):
         user_updates_buf.clear()
         for user_idx in random_user_idxs_sample:
             user_round_labels, user_round_feats = _get_data_for_user_for_round(
-                prms, data, user_idx
+                prms.batch_size, data, user_idx
             )
             user_updates_buf.append(
                 user_update_fed_avg(prms, user_round_feats, user_round_labels, theta_0)
@@ -197,7 +197,7 @@ def _calc_standard_dev(noise_scale, sensitivity, usr_sel_prob, weight_sum):
     return (noise_scale * sensitivity) / (usr_sel_prob * weight_sum)
 
 
-def _get_data_for_user_for_round(prms, data, user_id):
+def _get_data_for_user_for_round(batch_size, data, user_id):
     """
     Pick a random amount of entries per user for a given round.
     """
@@ -208,7 +208,7 @@ def _get_data_for_user_for_round(prms, data, user_id):
     user_feats = np.array(feats[user_id])
 
     num_entries_for_user = len(user_labels)
-    num_entries_to_choose = random.randint(prms.batch_size, num_entries_for_user)
+    num_entries_to_choose = random.randint(batch_size, num_entries_for_user)
 
     return _choose_n_labels_and_features_from_user_labels_and_data(
         user_labels, user_feats, num_entries_to_choose
