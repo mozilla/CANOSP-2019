@@ -48,6 +48,9 @@ class BaseSimulationRunner:
         user_id_col="user_id",
     ):
         self._model = model
+        # Make the model aware of the full set of labels (necessary for partial
+        # fit updating).
+        self._model.set_training_classes(training_data[label_col])
         # Maintain the history of model weights for each round.
         self._coefs = [coef_init]
         self._intercepts = [intercept_init]

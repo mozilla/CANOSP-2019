@@ -13,15 +13,22 @@ class SGDModel:
     """Wrapper around `scikit-learn`'s SGD classifier allowing for external
     updating of model weights and a modified training interface.
 
-    all_training_labels: the labels in the training data (doesn't need to be
-        unique). This is needed to enable `partial_fit`.
-
     Other kwargs supplied to the constructor are passed to the underlying
     classifier.
     """
 
-    def __init__(self, all_training_labels, **kwargs):
+    def __init__(self, **kwargs):
         self.classifier = SGDClassifier(**kwargs)
+
+    def set_training_classes(self, all_training_labels):
+        """Specify the set of all known classes in the training set.
+
+        This is necessary in order to use `classifier.partial_fit()`. It should
+        be called at some point prior to starting model training.
+
+        all_training_labels: the labels in the training data (doesn't need to be
+            unique). This is needed to enable `partial_fit`.
+        """
         self.classifier.classes_ = unique_labels(all_training_labels)
 
     def get_clone(self, trained=False):
@@ -30,11 +37,16 @@ class SGDModel:
         trained: if `True`, maintains current state including trained model
             weights, interation counter, etc. Otherwise, returns an unfitted
             model with the same initialization params.
+
+        Returns a new `SGDModel` instance.
         """
         if trained:
             new_classifier = copy.deepcopy(self.classifier)
         else:
             new_classifier = clone(self.classifier)
+            # If class labels have been specified, maintain these.
+            if getattr(self.classifier, "classes_", None):
+                new_classifier.classes_ = self.classifier.classes_
 
         new_model = self.__class__()
         new_model.classifier = new_classifier
