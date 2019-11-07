@@ -44,7 +44,7 @@ def run_fed_avg_with_dp(prms, data):
         prms.num_users, prms.user_weight_cap
     )
     theta = None
-    theta_0 = _init_theta_from_moment_accountant(prms.num_features, prms.num_labels)
+    theta_0 = _init_theta(prms.num_features, prms.num_labels)
     prev_theta = np.array(theta_0, copy=True)
     user_sel_prob = _calc_user_sel_proc(prms.num_users, 30)
     standard_dev = _calc_standard_dev(
@@ -172,7 +172,7 @@ def _get_random_selection_of_user_idxs(num_users, user_sel_prob):
     return sel_user_idxs
 
 
-def _init_theta_from_moment_accountant(num_features, num_labels):
+def _init_theta(num_features, num_labels):
     # Just a placeholder value for now
 
     # theta_0 is internally a linear array. We will use functon to get slices of the features/labels.
