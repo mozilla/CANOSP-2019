@@ -8,6 +8,7 @@ from sklearn.utils.multiclass import unique_labels
 
 import copy
 
+
 class SGDModel:
     """Wrapper around `scikit-learn`'s SGD classifier allowing for external
     updating of model weights and a modified training interface.
@@ -18,11 +19,10 @@ class SGDModel:
     Other kwargs supplied to the constructor are passed to the underlying
     classifier.
     """
-    
+
     def __init__(self, all_training_labels, **kwargs):
         self.classifier = SGDClassifier(**kwargs)
         self.classifier.classes_ = unique_labels(all_training_labels)
-
 
     def get_clone(self, trained=False):
         """Create a clone of this classifier.

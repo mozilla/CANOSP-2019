@@ -4,6 +4,7 @@
 
 import pytest
 
+
 def test_batching():
     # TODO: batching works as expected:
     # right number of batches of the right sizes

@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+
 class Client:
     """A client which trains model updates on its personal dataset for FL.
 
@@ -31,7 +32,9 @@ class Client:
         """Run a single GD update step on the given data minibatch."""
         self._model.minibatch_update(X, y)
 
-    def update_and_submit_weights(self, current_coef, current_intercept, num_epochs, batch_size):
+    def update_and_submit_weights(
+        self, current_coef, current_intercept, num_epochs, batch_size
+    ):
         """Update the current model weights for FL using the client's data.
 
         Resulting weights are submitted to the server.
@@ -48,8 +51,9 @@ class Client:
         # TODO: submit new weights to the server via API request.
         # self._model.get_weights() -> server
 
-
-    def update_and_submit_weights_dp(self, current_coef, current_intercept, num_epochs, batch_size):
+    def update_and_submit_weights_dp(
+        self, current_coef, current_intercept, num_epochs, batch_size
+    ):
         """Update the current model weights for FL with DP using the client's data.
 
         Resulting weights are submitted to the server.

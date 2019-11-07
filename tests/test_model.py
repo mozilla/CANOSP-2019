@@ -4,6 +4,7 @@
 
 import pytest
 
+
 def test_get_clone():
     # TODO: get_clone(trained=False) should return an object with the same
     # initialization params but missing coef_/intercept_/t_.
