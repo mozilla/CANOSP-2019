@@ -57,6 +57,10 @@ class SGDModel:
         return (self.classifier.coef_, self.classifier.intercept_)
 
     def minibatch_update(self, X, y):
-        """Run a single weight update on the given minibatch."""
+        """Run a single weight update on the given minibatch.
+
+        X and y should be arrays of the appropriate dimensions as required by
+        `SGDClassifier.fit()`.
+        """
         # TODO: implement. Need to consider how to set `t_` and `n_iter_`
         pass

@@ -6,6 +6,7 @@
 class Client:
     """A client which trains model updates on its personal dataset for FL.
 
+    client_id: a unique ID to assign each client
     features: an array of shape (`n_examples`, `n_features`) containing the
         client's personal dataset features
     labels: an array of shape (`n_features`) containing the client's personal
@@ -13,7 +14,8 @@ class Client:
     model: a `SGDModel` instance to be used for training
     """
 
-    def __init__(self, features, labels, model):
+    def __init__(self, client_id, features, labels, model):
+        self._id = client_id
         self._features = features
         self._labels = labels
         self._model = model
