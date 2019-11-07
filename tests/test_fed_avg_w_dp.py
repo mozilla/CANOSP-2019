@@ -52,5 +52,51 @@ class TestMergeAllUserThetas:
         )
 
 
+class TestSelectingRandomUserIdxs:
+
+    DEFAULT_NUM_USERS = 10000
+
+    def test_selects_user_idxs_follows_user_select_probability(self):
+        num_runs_for_average = 100
+
+        user_sel_prob = 0.2
+        tot_users_sel = 0
+        max_perc_variation_from_sel_prob = 0.01
+
+        for _ in range(num_runs_for_average):
+            res = fed_avg_w_dp._get_random_selection_of_user_idxs(
+                TestSelectingRandomUserIdxs.DEFAULT_NUM_USERS, user_sel_prob
+            )
+            tot_users_sel += len(res)
+
+        avg_users_sel_per_iter = tot_users_sel / num_runs_for_average
+        expected_avg_sel_users_per_iter = (
+            user_sel_prob * TestSelectingRandomUserIdxs.DEFAULT_NUM_USERS
+        )
+        assert _vals_are_within_percent_diff_range(
+            avg_users_sel_per_iter,
+            expected_avg_sel_users_per_iter,
+            max_perc_variation_from_sel_prob,
+        )
+
+    def test_can_handle_a_0_select_probability(self):
+        res = fed_avg_w_dp._get_random_selection_of_user_idxs(
+            TestSelectingRandomUserIdxs.DEFAULT_NUM_USERS, 0
+        )
+        assert len(res) == 0
+
+    def test_a_user_select_probability_of_1_returns_all_user_idxs(self):
+        res = fed_avg_w_dp._get_random_selection_of_user_idxs(
+            TestSelectingRandomUserIdxs.DEFAULT_NUM_USERS, 1
+        )
+        assert len(res) == TestSelectingRandomUserIdxs.DEFAULT_NUM_USERS
+
+
 def _lists_equal(l1, l2):
     return all(a == b for a, b in zip(l1, l2))
+
+
+def _vals_are_within_percent_diff_range(v1, v2, max_perc_diff):
+    perc_diff = (max(v1, v2) / min(v1, v2)) - 1
+    print("v1: {} v2: {}, perc_diff: {}".format(v1, v2, perc_diff))
+    return perc_diff <= max_perc_diff
