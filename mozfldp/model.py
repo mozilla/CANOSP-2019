@@ -4,17 +4,25 @@
 
 from sklearn.linear_model import SGDClassifier
 from sklearn.base import clone
+from sklearn.utils.multiclass import unique_labels
+
 import copy
 
 class SGDModel:
     """Wrapper around `scikit-learn`'s SGD classifier allowing for external
     updating of model weights and a modified training interface.
 
-    kwargs supplied to the constructor are passed to the underlying classifier.
+    all_training_labels: the labels in the training data (doesn't need to be
+        unique). This is needed to enable `partial_fit`.
+
+    Other kwargs supplied to the constructor are passed to the underlying
+    classifier.
     """
     
-    def __init__(self, **kwargs):
+    def __init__(self, all_training_labels, **kwargs):
         self.classifier = SGDClassifier(**kwargs)
+        self.classifier.classes_ = unique_labels(all_training_labels)
+
 
     def get_clone(self, trained=False):
         """Create a clone of this classifier.
