@@ -114,7 +114,6 @@ class TestFlatClipping:
             sensitivity, TestFlatClipping.FLAT_CLIP_TEST_VEC
         )
 
-        print(clipped_vec)
         assert np.allclose(clipped_vec, np.array([0.6, 0.8]))
 
 
@@ -139,6 +138,20 @@ def test_setting_theta_values_are_set_properly():
 
     assert np.array_equal(coefs, theta_coefs)
     assert np.array_equal(intercepts, theta_intercepts)
+
+
+def test_standard_dev():
+    z = 2
+    s = 3
+    q = 0.2
+    W = 4
+
+    #   (z * s) / (q * W)
+    #   (2 * 3) / (0.2 * 4)
+    # = 6 / 0.8 = 7.5
+
+    res = fed_avg_w_dp._calc_standard_dev(z, s, q, W)
+    assert res == 7.5
 
 
 #### Helper functions ####
