@@ -13,6 +13,7 @@ class FedAvgWithDpParams:
         batch_size,
         num_epochs,
         user_weight_cap,
+        user_sel_prob,
         sensitivity,
         noise_scale,
         rand_seed,
@@ -24,6 +25,7 @@ class FedAvgWithDpParams:
         self.batch_size = batch_size
         self.num_epochs = num_epochs
         self.user_weight_cap = user_weight_cap  # w_hat
+        self.user_sel_prob = user_sel_prob
         self.sensitivity = sensitivity
         self.noise_scale = noise_scale
         self.rand_seed = rand_seed
@@ -46,9 +48,8 @@ def run_fed_avg_with_dp(prms, data):
     theta = None
     theta_0 = _init_theta(prms.num_features, prms.num_labels)
     prev_theta = np.array(theta_0, copy=True)
-    user_sel_prob = _calc_user_sel_proc(prms.num_users, 30)
     standard_dev = _calc_standard_dev(
-        prms.noise_scale, prms.sensitivity, user_sel_prob, weight_sum
+        prms.noise_scale, prms.sensitivity, prms.user_sel_prob, weight_sum
     )  # This feels weird being a constant...
     user_updates_buf = []
     num_theta_elems = prms.num_features * prms.num_labels + prms.num_labels
@@ -56,7 +57,7 @@ def run_fed_avg_with_dp(prms, data):
     for round_t in range(prms.num_rounds):
         # Pick a random set of users to sample
         random_user_idxs_sample = _get_random_selection_of_user_idxs(
-            prms.num_users, user_sel_prob
+            prms.num_users, prms.user_sel_prob
         )
 
         # Query the selected users
@@ -71,7 +72,11 @@ def run_fed_avg_with_dp(prms, data):
 
         # Merge (fc)
         merged_user_values = _merge_all_user_thetas(
-            user_sel_prob, weight_sum, user_updates_buf, user_weights, num_theta_elems
+            prms.user_sel_prob,
+            weight_sum,
+            user_updates_buf,
+            user_weights,
+            num_theta_elems,
         )  # Note that we start at t + 1
 
         # Note: Assuming for now that S is defined before we run
@@ -96,7 +101,9 @@ def run_fed_avg_with_dp(prms, data):
 
 
 # TODO: Give better function name...
-def _merge_all_user_thetas(user_sel_prob, weight_sum, user_updates_buf, user_weights, num_theta_elems):
+def _merge_all_user_thetas(
+    user_sel_prob, weight_sum, user_updates_buf, user_weights, num_theta_elems
+):
     """
     Merge all user updates for a round into a single delta (vector).
     """
@@ -219,9 +226,7 @@ def _gen_gausian_rand_noise(stndrd_dev, vec_len):
     return np.random.normal(loc=0.0, scale=stndrd_dev, size=vec_len)
 
 
-def _choose_n_labels_and_features_from_user_labels_and_data(
-    user_labels, user_feats, n
-):
+def _choose_n_labels_and_features_from_user_labels_and_data(user_labels, user_feats, n):
     labels_for_round = []
     feats_for_round = []
 
@@ -232,10 +237,6 @@ def _choose_n_labels_and_features_from_user_labels_and_data(
         feats_for_round.append(user_feats[i])
 
     return labels_for_round, feats_for_round
-
-
-def _calc_user_sel_proc(num_users, expected_num_users_picked_per_round):
-    return (1 / num_users) * expected_num_users_picked_per_round
 
 
 def _moments_accountant_accum_priv_spending(noise_scale):

@@ -110,6 +110,7 @@ def fed_avg_with_dp(s_prms, data):
         s_prms[Runner.P_KEY_BATCH_SIZE],
         s_prms[Runner.P_KEY_NUM_EPOCHS],
         s_prms[Runner.P_KEY_WEIGHT_MOD],
+        s_prms[Runner.P_KEY_USER_SEL_PROB],
         s_prms[Runner.P_KEY_SENSITIVITY],
         s_prms[Runner.P_KEY_NOISE_SCALE],
         42,  # Hardcode rand_seed until PR #27 (Runner random seed param) gets merged in
@@ -175,6 +176,7 @@ class Runner:
     P_KEY_NUM_EPOCHS = "num_epochs"
 
     P_KEY_WEIGHT_MOD = "weight_mod"
+    P_KEY_USER_SEL_PROB = "user_sel_prob"
     P_KEY_SENSITIVITY = "sensitivity"
     P_KEY_NOISE_SCALE = "noise_scale"
 
@@ -200,6 +202,7 @@ class Runner:
                 P_KEY_BATCH_SIZE,
                 P_KEY_NUM_EPOCHS,
                 P_KEY_WEIGHT_MOD,
+                P_KEY_USER_SEL_PROB,
                 P_KEY_SENSITIVITY,
                 P_KEY_NOISE_SCALE,
             },
