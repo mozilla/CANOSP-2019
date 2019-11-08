@@ -61,9 +61,7 @@ def run_fed_avg_with_dp(prms, data):
         # Query the selected users
         user_updates_buf.clear()
         for user_idx in random_user_idxs_sample:
-            user_round_labels, user_round_feats = _get_data_for_user_for_round(
-                prms.batch_size, data, user_idx
-            )
+            user_round_labels, user_round_feats = _get_data_for_user(data, user_idx)
             user_updates_buf.append(
                 user_update_fed_avg(prms, user_round_feats, user_round_labels, theta)
             )
@@ -201,39 +199,17 @@ def _calc_standard_dev(noise_scale, sensitivity, usr_sel_prob, weight_sum):
     return (noise_scale * sensitivity) / (usr_sel_prob * weight_sum)
 
 
-def _get_data_for_user_for_round(batch_size, data, user_id):
+def _get_data_for_user(data, user_id):
     """
-    Pick a random amount of entries per user for a given round.
+    Pick all the labels/feature that belong to a user for a round
     """
+
     labels, feats = data
-
-    # TODO: np is a temp hack! Probably should do this to data at the start of the sim instead.
-    user_labels = np.array(labels[user_id])
-    user_feats = np.array(feats[user_id])
-
-    num_entries_for_user = len(user_labels)
-    num_entries_to_choose = random.randint(batch_size, num_entries_for_user)
-
-    return _choose_n_labels_and_features_from_user_labels_and_data(
-        user_labels, user_feats, num_entries_to_choose
-    )
+    return labels[user_id], feats[user_id]
 
 
 def _gen_gausian_rand_noise(stndrd_dev, vec_len):
     return np.random.normal(loc=0.0, scale=stndrd_dev, size=vec_len)
-
-
-def _choose_n_labels_and_features_from_user_labels_and_data(user_labels, user_feats, n):
-    labels_for_round = []
-    feats_for_round = []
-
-    chosen_idxs = np.random.choice(len(user_labels), size=n)
-
-    for i in chosen_idxs:
-        labels_for_round.append(user_labels[i])
-        feats_for_round.append(user_feats[i])
-
-    return labels_for_round, feats_for_round
 
 
 def _moments_accountant_accum_priv_spending(noise_scale):
