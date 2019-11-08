@@ -50,7 +50,7 @@ def run_fed_avg_with_dp(prms, data):
     prev_theta = np.array(theta_0, copy=True)
     standard_dev = _calc_standard_dev(
         prms.noise_scale, prms.sensitivity, prms.user_sel_prob, weight_sum
-    )  # This feels weird being a constant...
+    )
     user_updates_buf = []
     num_theta_elems = prms.num_features * prms.num_labels + prms.num_labels
 
