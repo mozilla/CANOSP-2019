@@ -4,8 +4,7 @@
 
 import numpy as np
 import pandas as pd
-import sklearn as skl
-from sklearn import datasets
+import sklearn
 
 # Used to control the range of values for the random gen func (1.0 --> [-1.0, 1.0])
 RAND_FEAT_RANGE = 1.0
@@ -68,7 +67,7 @@ def transform_data_for_simulator_format(df, g_prms):
 
 
 def _gen_blob_data(g_prms):
-    feat_arr, label_idxs = skl.datasets.make_blobs(
+    feat_arr, label_idxs = sklearn.datasets.make_blobs(
         n_samples=g_prms.num_samples,
         n_features=g_prms.num_features,
         centers=g_prms.num_labels,
@@ -95,7 +94,7 @@ def _evenly_add_labels_to_data(df, g_prms):
 
 
 def _add_users_ids_to_data_and_shuffle(df, g_prms):
-    df = skl.utils.shuffle(df)
+    df = sklearn.utils.shuffle(df)
     _add_evenly_distributed_values_to_data(df, g_prms, g_prms.num_users, "user_id")
     return df
 
@@ -133,47 +132,6 @@ def _gen_data_and_add_user_data(data_gen_func, g_prms):
     return _gen_data_until_prereq_met(
         gen_and_add_users_func, _all_users_have_at_least_n_unique_lables
     )
-
-
-def _gen_data_and_add_user_data(data_gen_func, g_prms):
-    def gen_and_add_users_func():
-        data = data_gen_func(g_prms)
-        data = _add_users_ids_to_data_and_shuffle(data, g_prms)
-        return data
-
-    return _gen_data_until_prereq_met(
-        gen_and_add_users_func, _all_users_have_at_least_n_unique_lables
-    )
-
-
-def _add_users_ids_to_data_and_shuffle(df, g_prms):
-    df = skl.utils.shuffle(df)
-    _add_evenly_distributed_values_to_data(df, g_prms, g_prms.num_users, "user_id")
-    return df
-
-
-def _gen_data_until_prereq_met(data_gen_func, prereq_func):
-    prereq_met = False
-    df = None
-
-    while not prereq_met:
-        df = data_gen_func()
-        prereq_met = prereq_func(df)
-
-    return df
-
-
-def _all_users_have_at_least_n_unique_lables(data):
-    nunique_labels = data.groupby("user_id", as_index=False).agg({"labels": "nunique"})
-    ok = (nunique_labels["labels"] < USERS_MIN_UNIQUE_LABELS).sum() == 0
-
-    if not ok:
-        print(
-            "Not all users have {} unique labels! Regenerating!".format(
-                USERS_MIN_UNIQUE_LABELS
-            )
-        )
-    return ok
 
 
 def _add_evenly_distributed_values_to_data(df, g_prms, num_items, field_name):
