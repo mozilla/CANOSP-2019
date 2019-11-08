@@ -132,10 +132,7 @@ def user_update_fed_avg(prms, round_user_features, round_user_labels, theta_0):
     )
 
     round_num_entries = len(round_user_features)
-
-    # For now just skip any batches that are smaller than batch_size
-    num_batches = round_num_entries // prms.batch_size
-
+    num_batches = int(np.ceil(round_num_entries / prms.batch_size))
     theta = np.array(theta_0, copy=True)
 
     # Split the round data into seperate batches
