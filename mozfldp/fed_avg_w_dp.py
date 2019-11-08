@@ -115,7 +115,10 @@ def _merge_all_user_thetas(
 
 
 def flat_clip(sensitivity, vec):
-    vec *= min(1, sensitivity / np.linalg.norm(vec))
+    norm = np.linalg.norm(vec)
+    if norm > sensitivity:
+        vec *= sensitivity / norm
+
     return vec
 
 
