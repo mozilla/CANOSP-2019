@@ -75,8 +75,9 @@ class SGDModel:
         `SGDClassifier.fit()`.
         """
         init_weight = [self.classifier.coef_, self.classifier.intercept_]
-        # array used to store all the weights for current min-batch
-        mini_batch_weights = []
+        # array used to store sum of all the weights for current min-batch
+        mini_batch_coefs = np.zeros(init_weight[0].shape, dtype=np.float64, order="C")
+        mini_batch_intercept = np.zeros(init_weight[1].shape, dtype=np.float64, order="C")
 
         for i in range(len(x)):
             self.classifier.partial_fit(X[i],y[i])
@@ -85,15 +86,21 @@ class SGDModel:
             intercept = self.classifier.intercept_
 
             # save the weight per sample
-            mini_batch_weights.apend([coef,intercept])
+            new_coefs = np.add(new_coefs, coef)
+            new_intercept = np.add(new_intercept, intercept)
+
 
             # refresh the classifier
             self.classifier.coef_ = init_weight[0]
             self.classifier.intercept_ = init_weight[1]
-
         
-        self.classifier
+        # average against number of sample
+        mini_batch_coefs = np.true_divide(mini_batch_coefs, len(x))
+        mini_batch_intercept = np.true_divide(mini_batch_intercept, len(x))
 
+
+        self.set_weights(mini_batch_coefs, mini_batch_intercept)
 
         # TODO: implement. Need to consider how to set `t_` and `n_iter_`
+        
         pass
