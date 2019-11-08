@@ -102,6 +102,7 @@ def run_fed_learn_sim(s_prms, data):
 
         print("Weights: {}\nScore: {:f}\n\n".format(weights, score))
 
+        return score
 
 def fed_avg_with_dp(s_prms, data):
     prms = FedAvgWithDpParams(
@@ -149,6 +150,8 @@ def fed_avg_with_dp(s_prms, data):
 
     score = clf.score(reshaped_feat_test, reshaped_label_test)
     print("Score: {}".format(score))
+
+    return score
 
 
 class RunnerException(Exception):

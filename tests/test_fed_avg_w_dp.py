@@ -2,9 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import pytest
 import numpy as np
-from mozfldp import fed_avg_w_dp
+import pandas as pd
 
+from mozfldp import fed_avg_w_dp, runner, random_data_gen
+from mozfldp.runner import Runner
+
+import warnings
 
 # Module globals because class variables can't be used as default variables
 DEFAULT_USER_SEL_PROB = 0.1
@@ -115,6 +120,65 @@ class TestFlatClipping:
         )
 
         assert np.allclose(clipped_vec, np.array([0.6, 0.8]))
+
+
+class TestFedAvgWDPHighLevel:
+
+    BLOB_DATA_PATH = "datasets/blob_S20000_L3_F4_U100.csv"
+    RAND_DATA_PATH = "datasets/rand_S20000_L3_F4_U100.csv"
+
+    SEEDS_TO_TEST_WITH = [42, 117, 1337, 981]
+
+    @pytest.mark.slow
+    def test_converges_resonably_with_blob_dataset(self):
+        # Ensure that the score is at least 70%
+        TestFedAvgWDPHighLevel._run_sim_on_dataset(
+            TestFedAvgWDPHighLevel.BLOB_DATA_PATH, 1.0, 0.3
+        )
+
+    @pytest.mark.slow
+    def test_does_not_converge_nicely_with_rand_dataset(self):
+        # Ensure that the score hovers around 33%
+        TestFedAvgWDPHighLevel._run_sim_on_dataset(
+            TestFedAvgWDPHighLevel.RAND_DATA_PATH, 0.33, 0.3
+        )
+
+    def _run_sim_on_dataset(data_set_path, target_perc, max_diff_perc):
+        # hide the warning message temporarily
+        warnings.simplefilter("ignore")
+
+        data = TestFedAvgWDPHighLevel._load_data_from_file(data_set_path)
+
+        for seed in TestFedAvgWDPHighLevel.SEEDS_TO_TEST_WITH:
+            print('Running "{}" with seed {}...'.format(data_set_path, seed))
+
+            sim_prms = TestFedAvgWDPHighLevel._create_sim_prms_with_rand_seed(seed)
+            score = runner.fed_avg_with_dp(sim_prms, data)
+
+            assert _vals_are_within_percent_diff_range(
+                score, target_perc, max_diff_perc
+            )
+
+    def _load_data_from_file(path):
+        g_prms = random_data_gen.InputGenParams(20000, 3, 4, 100, 1.0, 2)
+        df = pd.read_csv(path)
+        return random_data_gen.transform_data_for_simulator_format(df, g_prms)
+
+    def _create_sim_prms_with_rand_seed(seed):
+        return {
+            Runner.P_KEY_NUM_SAMPLES: 20000,
+            Runner.P_KEY_NUM_LABELS: 3,
+            Runner.P_KEY_NUM_FEATURES: 4,
+            Runner.P_KEY_NUM_USERS: 100,
+            Runner.P_KEY_BATCH_SIZE: 40,
+            Runner.P_KEY_NUM_EPOCHS: 5,
+            Runner.P_KEY_NUM_ROUNDS: 10,
+            Runner.P_KEY_WEIGHT_MOD: 1,
+            Runner.P_KEY_USER_SEL_PROB: 0.1,
+            Runner.P_KEY_SENSITIVITY: 0.5,
+            Runner.P_KEY_NOISE_SCALE: 1.0,
+            Runner.P_KEY_RAND_SEED: seed,
+        }
 
 
 #### Small tests ####
