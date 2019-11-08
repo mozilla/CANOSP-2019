@@ -43,7 +43,7 @@ def run_fed_avg_with_dp(prms, data):
     random.seed(prms.rand_seed)
 
     user_weights, weight_sum = _init_user_weights_and_weight_sum(
-        prms.num_users, prms.user_weight_cap
+        data, prms.num_users, prms.user_weight_cap
     )
     theta = _init_theta(prms.num_features, prms.num_labels)
     standard_dev = _calc_standard_dev(
@@ -181,18 +181,22 @@ def _init_theta(num_features, num_labels):
     return np.zeros(num_labels * num_features + num_labels, dtype=np.float64, order="C")
 
 
-def _init_user_weights_and_weight_sum(num_users, user_weight_cap):
-    weights = (
-        []
-    )  # NOTE: Since user weights appear to be constant for all users, we may not need an array of weights.
-    init_weight = min(num_users / user_weight_cap, 1)
+def _init_user_weights_and_weight_sum(data, num_users, user_weight_cap):
+    user_weights = []
+    weight_sum = 0
 
-    for _ in range(num_users):
-        weights.append(init_weight)
+    for usr_idx in range(num_users):
+        user_weight =_init_user_weight(data, usr_idx, user_weight_cap)
+        user_weights.append(user_weight)
+        weight_sum += user_weight
 
-    weight_sum = num_users * init_weight
+    return np.array(user_weights), weight_sum
 
-    return weights, weight_sum
+
+def _init_user_weight(data, usr_idx, user_weight_cap):
+    user_labels, _ = _get_data_for_user(data, usr_idx)
+    num_user_entries = len(user_labels)
+    return min(num_user_entries / user_weight_cap, 1)
 
 
 def _calc_standard_dev(noise_scale, sensitivity, usr_sel_prob, weight_sum):
