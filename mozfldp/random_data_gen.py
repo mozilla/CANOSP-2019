@@ -54,7 +54,7 @@ def generate_random_data(g_prms):
     return _gen_data_and_add_user_data(_gen_random_data, g_prms)
 
 
-def transform_data_for_simulator_format(df, g_prms, verbose=False):
+def transform_data_for_simulator_format(df, g_prms):
     """
     Transforms a Pandas DataFrame returned by the generation functions into a format that is usable by the simulator.
     See notebook for the specific format.
@@ -70,10 +70,7 @@ def transform_data_for_simulator_format(df, g_prms, verbose=False):
 
         # convert tuples to lists
         client_feats = [list(feat) for feat in client_feats]
-
         feats.append(client_feats)
-        if verbose:
-            print("Loading data for client", i)
 
     return (labels, feats)
 
