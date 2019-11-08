@@ -45,9 +45,7 @@ def run_fed_avg_with_dp(prms, data):
     user_weights, weight_sum = _init_user_weights_and_weight_sum(
         prms.num_users, prms.user_weight_cap
     )
-    theta = None
-    theta_0 = _init_theta(prms.num_features, prms.num_labels)
-    prev_theta = np.array(theta_0, copy=True)
+    theta = _init_theta(prms.num_features, prms.num_labels)
     standard_dev = _calc_standard_dev(
         prms.noise_scale, prms.sensitivity, prms.user_sel_prob, weight_sum
     )
@@ -67,7 +65,7 @@ def run_fed_avg_with_dp(prms, data):
                 prms.batch_size, data, user_idx
             )
             user_updates_buf.append(
-                user_update_fed_avg(prms, user_round_feats, user_round_labels, theta_0)
+                user_update_fed_avg(prms, user_round_feats, user_round_labels, theta)
             )
 
         # Merge (fc)
@@ -84,8 +82,7 @@ def run_fed_avg_with_dp(prms, data):
             standard_dev, len(merged_user_values)
         )
 
-        theta = prev_theta + merged_user_values + rand_gauss_noise
-        prev_theta = theta
+        theta += merged_user_values + rand_gauss_noise
 
         print("Theta ([coef, inter] for round {}: \n {}".format(round_t, theta))
         _moments_accountant_accum_priv_spending(prms.noise_scale)
@@ -182,7 +179,7 @@ def _get_random_selection_of_user_idxs(num_users, user_sel_prob):
 def _init_theta(num_features, num_labels):
     # Just a placeholder value for now
 
-    # theta_0 is internally a linear array. We will use functon to get slices of the features/labels.
+    # theta is internally a linear array. We will use a functon to get slices of the features/labels.
     return np.zeros(num_labels * num_features + num_labels, dtype=np.float64, order="C")
 
 
