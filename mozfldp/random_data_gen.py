@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from sklearn.datasets import make_blobs
 
+
 class InputGenParams:
     """
     This is just used to nicely pass around generation parameters between functions.
@@ -20,8 +21,15 @@ class InputGenParams:
     must have.
     """
 
-    def __init__(self, num_samples, num_labels, num_features, num_users,
-            rand_range=1.0, min_unique_classes=2):
+    def __init__(
+        self,
+        num_samples,
+        num_labels,
+        num_features,
+        num_users,
+        rand_range=1.0,
+        min_unique_classes=2,
+    ):
         self.num_samples = num_samples
         self.num_labels = num_labels
         self.num_features = num_features
@@ -54,15 +62,15 @@ def transform_data_for_simulator_format(df, g_prms, verbose=False):
     labels = []
     feats = []
     for i in range(g_prms.num_users):
-        client_df = df[df.user_id == i]#.drop(df.columns[0], axis=1)
+        client_df = df[df.user_id == i]  # .drop(df.columns[0], axis=1)
         labels.append(list(client_df.label))
         client_feats = client_df.drop(columns=["user_id", "label"]).to_records(
             index=False
         )
-        
+
         # convert tuples to lists
         client_feats = [list(feat) for feat in client_feats]
-        
+
         feats.append(client_feats)
         if verbose:
             print("Loading data for client", i)
@@ -90,14 +98,14 @@ def _gen_random_data(g_prms):
 
     df = pd.DataFrame(feat_arr)
     # Add dummy class labels.
-    df["label"] = _generate_evenly_distributed_ids(g_prms.num_samples,
-            g_prms.num_labels)
+    df["label"] = _generate_evenly_distributed_ids(
+        g_prms.num_samples, g_prms.num_labels
+    )
     return df
 
 
 def _add_users_ids_to_data_and_shuffle(df, g_prms):
-    user_ids = _generate_evenly_distributed_ids(g_prms.num_samples,
-            g_prms.num_users)
+    user_ids = _generate_evenly_distributed_ids(g_prms.num_samples, g_prms.num_users)
     # Randomize which rows get assigned which user IDs.
     np.random.shuffle(user_ids)
 
