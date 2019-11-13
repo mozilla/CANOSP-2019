@@ -47,8 +47,8 @@ class Client:
 
         # TODO: update weights across batches and epochs.
         for epoch in range(num_epochs):
-            for i in range(num_batches):
-                self._run_model_update_step(batch_features[i], batch_labels[i])
+            for i in range(batch_size):
+                self._run_model_update_step(self._features[i], self._labels[i])
 
         # TODO: submit new weights to the server via API request.
         # self._model.get_weights() -> server
