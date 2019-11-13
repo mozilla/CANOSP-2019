@@ -3,21 +3,23 @@ import numpy as np
 import random
 
 
-def client_update(init_weights, epochs, batch_size, features, labels, all_classes):
+def client_update(
+    init_weights, epochs, batch_size, features, labels, all_classes, rand_seed
+):
     """
     Given the previous weights from the server, it does updates on the model
     and returns the new set of weights
 
-    init_weights: weights to initialize the training with 
+    init_weights: weights to initialize the training with
         ex: [weights of size num_classes*num_features, intercepts of size num_classes]
-    epochs: number of epochs to run the training for 
-    batch_size: the size of each batch of data while training 
-    features: a 2D array containing features for each sample 
+    epochs: number of epochs to run the training for
+    batch_size: the size of each batch of data while training
+    features: a 2D array containing features for each sample
         ex: [[feature1, feature2], [feature1, feature2], ...]
     labels: an array containing the labels for the corresponding sample in "features"
         ex: [label1, label2, ...]
-    all_classes: an array containing the unique labels across the entire
-    dataset (`labels` may not contain all of these)
+    all_classes: an array containing the unique labels across the entire dataset (`labels` may not contain all of these)
+    rand_seed: a seed to use with any random number generation in order to get consistant results between runs
     """
 
     # split the data into batches by given batch_size
@@ -32,7 +34,7 @@ def client_update(init_weights, epochs, batch_size, features, labels, all_classe
     coef = list(init_weights[0])
     intercept = list(init_weights[1])
 
-    classifier = SGDClassifier(loss="log")
+    classifier = SGDClassifier(loss="log", random_state=rand_seed)
     classifier.coef_ = np.array(coef)
     classifier.intercept_ = np.array(intercept)
 
@@ -70,23 +72,25 @@ def server_update(
     epoch,
     batch_size,
     display_weight_per_round,
+    rand_seed,
 ):
     """
     Calls client_update to get the updated weights from clients, and applies Federated
     Averaging Algorithm to update the weight on server side
-    
-    init_weights: weights to initialize the training with 
+
+    init_weights: weights to initialize the training with
         ex: [weights of size num_classes*num_features, intercepts of size num_classes]
-    client_fraction: fraction of clients to use per round 
+    client_fraction: fraction of clients to use per round
     num_rounds: number of rounds used to update the weight
-    features: a 3D array containing features for each sample 
+    features: a 3D array containing features for each sample
         ex: [[[feature1, feature2], [feature1, feature2], ...]]
     labels: an array containing the labels for the corresponding sample in "features"
         ex: [label1, label2, ...]
     epoch: number of epochs to run the training for
-    batch_size: the size of each batch of data while training 
+    batch_size: the size of each batch of data while training
     display_weight_per_round: a boolean value used to toggle the display of weight value per round
-    
+    rand_seed: a seed to use with any random number generation in order to get consistant results between runs
+
     """
     # initialize the weights
     coef = list(init_weight[0])
@@ -99,6 +103,9 @@ def server_update(
     client_num = len(features)
     # fraction of clients
     C = client_fraction
+
+    # reseed the rng each run
+    random.seed(rand_seed)
 
     # use to generate n_k so that the sum of n_k equals to n
     for i in range(num_rounds):
@@ -125,6 +132,7 @@ def server_update(
                 client_feature,
                 client_label,
                 all_classes,
+                rand_seed,
             )
 
             client_coefs = append(client_coefs, coefs)
@@ -158,7 +166,7 @@ def server_update(
             print("Updated Weights: ", coef, intercept)
 
     # load coefficients and intercept into the classifier
-    clf = SGDClassifier(loss="log")
+    clf = SGDClassifier(loss="log", random_state=rand_seed)
 
     clf.coef_ = coef
     clf.intercept_ = intercept
