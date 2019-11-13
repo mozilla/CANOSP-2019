@@ -118,7 +118,7 @@ class FLSimulationRunner(BaseSimulationRunner):
         self._coefs.append(new_coef)
         self._intercepts.append(new_intercept)
 
-        ## Increment the round counter.
+        # Increment the round counter.
         super().run_simulation_round()
 
         return new_coef, new_intercept
