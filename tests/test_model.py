@@ -14,4 +14,5 @@ def test_get_clone():
 
 
 def test_minibatch_update():
+    # TODO: check weights and iteration counters t_, n_iter_ for correctness.
     pass

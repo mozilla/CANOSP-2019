@@ -61,7 +61,9 @@ class BaseSimulationRunner:
         by_user_data = training_data.groupby("user_id")
         for user_id, user_data in by_user_data:
             feats, labs = _format_data_for_model(user_data, label_col, user_id_col)
-            self._clients.append(Client(user_id, feats, labs, self._model.get_clone()))
+            self._clients.append(
+                Client(user_id, feats, labs, self._model.get_clone(trained=True))
+            )
 
         # Format the test data into features/labels arrays, if provided.
         self._test_data_features, self._test_data_labels = _format_data_for_model(
@@ -116,7 +118,7 @@ class FLSimulationRunner(BaseSimulationRunner):
         self._coefs.append(new_coef)
         self._intercepts.append(new_intercept)
 
-        ## Increment the round counter.
+        # Increment the round counter.
         super().run_simulation_round()
 
         return new_coef, new_intercept
