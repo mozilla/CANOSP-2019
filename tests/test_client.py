@@ -6,43 +6,73 @@ import pytest
 import numpy as np
 
 from mozfldp.client import Client
+from mozfldp.model import SGDModel
+
+import random
+
+FEATURES = [
+    [6, 9, 6],
+    [9, 2, 8],
+    [0, 5, 4],
+    [2, 6, 1],
+    [6, 8, 1],
+    [6, 1, 6],
+    [5, 8, 5],
+    [7, 6, 6],
+]
+LABELS = [1, 0, 1, 0, 1, 0, 1, 0]
+
+# Expected result of batching permuted indices after calling reset_random_seed().
+SEEDED_BATCHED_2 = [[1, 5], [0, 7], [2, 4], [3, 6]]
+SEEDED_BATCHED_3 = [[1, 5, 0], [7, 2, 4], [3, 6]]
 
 
-def check_batch_indices(batch_ind, data_n, main_batch_size, final_batch_size):
-    # batch_ind is a list containing index lists.
-    all_ind = np.concatenate(batch_ind)
-    # indices in batch_ind should cover 0, 1, ..., n-1.
-    assert len(np.setxor1d(all_ind, np.arange(data_n))) == 0
-    # number of batches:
-    assert len(batch_ind) == np.ceil(data_n / main_batch_size)
-    # all index lists should be of the same size, except possibly the last one.
-    for i in range(len(batch_ind) - 1):
-        assert len(batch_ind[i]) == main_batch_size
-    assert len(batch_ind[-1]) == final_batch_size
+@pytest.fixture
+def features():
+    return np.array(FEATURES)
 
 
-def test_batching():
-    features = np.array(
-        [
-            [6, 9, 6],
-            [9, 2, 8],
-            [0, 5, 4],
-            [2, 6, 1],
-            [6, 8, 1],
-            [6, 1, 6],
-            [5, 8, 5],
-            [7, 6, 6],
-        ]
-    )
-    labels = np.array([1, 0, 1, 0, 1, 0, 1, 0])
+@pytest.fixture
+def labels():
+    return np.array(LABELS)
 
+
+@pytest.fixture
+def model():
+    return SGDModel()
+
+
+@pytest.fixture
+def batched_indices_2():
+    return [np.array(idx) for idx in SEEDED_BATCHED_2]
+
+
+@pytest.fixture
+def batched_indices_3():
+    return [np.array(idx) for idx in SEEDED_BATCHED_3]
+
+
+def reset_random_seed():
+    random.seed(42)
+    np.random.seed(42)
+
+
+def test_batching(features, labels, batched_indices_2, batched_indices_3):
     client = Client(client_id=None, features=features, labels=labels, model=None)
 
+    reset_random_seed()
+    # Batch size divides data evenly.
     batches_size_div = client._get_batch_indices(2)
-    check_batch_indices(batches_size_div, 8, 2, 2)
+    assert len(batches_size_div) == len(batched_indices_2)
+    for actual, expected in zip(batches_size_div, batched_indices_2):
+        assert (actual == expected).all()
 
+    reset_random_seed()
+    # Batch size does not divide data evenly.
     batches_size_nondiv = client._get_batch_indices(3)
-    check_batch_indices(batches_size_nondiv, 8, 3, 2)
+    assert len(batches_size_nondiv) == len(batched_indices_3)
+    for actual, expected in zip(batches_size_nondiv, batched_indices_3):
+        assert (actual == expected).all()
 
 
 def test_update_weights():
