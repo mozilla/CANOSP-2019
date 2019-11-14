@@ -115,7 +115,7 @@ def fed_avg_with_dp(s_prms, data):
         s_prms[Runner.P_KEY_USER_SEL_PROB],
         s_prms[Runner.P_KEY_SENSITIVITY],
         s_prms[Runner.P_KEY_NOISE_SCALE],
-        42,  # Hardcode rand_seed until PR #27 (Runner random seed param) gets merged in
+        s_prms[Runner.P_KEY_RAND_SEED],
     )
 
     labels, features = data
@@ -123,9 +123,8 @@ def fed_avg_with_dp(s_prms, data):
     features = np.array(features)
 
     # Split the data into training and testing sets
-    # TODO: Replace seed of 0 with random seed param
     feat_train, feat_test, label_train, label_test = train_test_split(
-        features, labels, test_size=0.4, random_state=0
+        features, labels, test_size=0.4, random_state=prms.rand_seed
     )
 
     # Since we are breaking the data into testing/training sets, we need to update the num_users parameter for the sim (since 100 users --> 60)
@@ -134,9 +133,8 @@ def fed_avg_with_dp(s_prms, data):
     training_data = [label_train, feat_train]
     [trained_coef, trained_inter] = run_fed_avg_with_dp(prms, training_data)
 
-    # TODO: Replace rand_seed hardcode
     clf = sklearn.linear_model.SGDClassifier(
-        loss="hinge", penalty="l2", random_state=42
+        loss="hinge", penalty="l2", random_state=prms.rand_seed
     )
     clf.coef_ = trained_coef
     clf.intercept_ = trained_inter
