@@ -48,6 +48,7 @@ def run_fed_learn_sim(s_prms, data):
     num_rounds = s_prms[Runner.P_KEY_NUM_ROUNDS]
     batch_size = s_prms[Runner.P_KEY_BATCH_SIZE]
     num_epochs = s_prms[Runner.P_KEY_NUM_EPOCHS]
+    rand_seed = s_prms[Runner.P_KEY_RAND_SEED]
 
     # Note: data is already transformed for sim format
 
@@ -57,7 +58,7 @@ def run_fed_learn_sim(s_prms, data):
 
     # Split the data into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(
-        features, labels, test_size=0.4, random_state=0
+        features, labels, test_size=0.4, random_state=rand_seed
     )
 
     init_weights = np.zeros((num_labels, num_features), dtype=np.float64, order="C")
@@ -85,6 +86,7 @@ def run_fed_learn_sim(s_prms, data):
             params["epoch"],
             params["batch_size"],
             False,
+            rand_seed,
         )
         weights = [classifier.coef_, classifier.intercept_]
 
@@ -174,6 +176,7 @@ class Runner:
     P_KEY_NUM_ROUNDS = "num_rounds"
     P_KEY_BATCH_SIZE = "batch_size"
     P_KEY_NUM_EPOCHS = "num_epochs"
+    P_KEY_RAND_SEED = "rand_seed"
 
     P_KEY_WEIGHT_MOD = "weight_mod"
     P_KEY_USER_SEL_PROB = "user_sel_prob"
@@ -190,6 +193,7 @@ class Runner:
                 P_KEY_NUM_SAMPLES,
                 P_KEY_NUM_FEATURES,
                 P_KEY_NUM_USERS,
+                P_KEY_RAND_SEED,
             },
         ),
         SIM_TYPE_FED_AVG_WITH_DP: (
