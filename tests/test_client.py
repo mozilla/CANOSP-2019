@@ -62,20 +62,28 @@ def reset_random_seed():
     np.random.seed(42)
 
 
+def compare_batch_indices(actual, expected):
+    assert len(actual) == len(expected)
+    for act, exp in zip(actual, expected):
+        assert np.array_equal(act, exp)
+
+
 def test_batching(client, batched_indices_2, batched_indices_3):
     reset_random_seed()
     # Batch size divides data evenly.
     batches_size_div = client._get_batch_indices(2)
-    assert len(batches_size_div) == len(batched_indices_2)
-    for actual, expected in zip(batches_size_div, batched_indices_2):
-        assert np.array_equal(actual, expected)
+    compare_batch_indices(batches_size_div, batched_indices_2)
 
     reset_random_seed()
     # Batch size does not divide data evenly.
     batches_size_nondiv = client._get_batch_indices(3)
-    assert len(batches_size_nondiv) == len(batched_indices_3)
-    for actual, expected in zip(batches_size_nondiv, batched_indices_3):
-        assert np.array_equal(actual, expected)
+    compare_batch_indices(batches_size_nondiv, batched_indices_3)
+
+    reset_random_seed()
+    # If batch size exceeds data size, all data should be in a single batch.
+    batches_size_exceed = client._get_batch_indices(20)
+    batch_ind = [np.ravel(batched_indices_2)]
+    compare_batch_indices(batches_size_exceed, batch_ind)
 
 
 def test_update_weights(client, monkeypatch, batched_indices_2):
