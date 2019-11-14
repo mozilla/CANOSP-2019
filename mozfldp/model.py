@@ -5,6 +5,7 @@
 from sklearn.linear_model import SGDClassifier
 from sklearn.base import clone
 from sklearn.utils.multiclass import unique_labels
+import numpy as np
 
 import copy
 
@@ -74,20 +75,20 @@ class SGDModel:
         X and y should be arrays of the appropriate dimensions as required by
         `SGDClassifier.fit()`.
         """
-        init_weight = [self.classifier.coef_, self.classifier.intercept_]
+        init_weight = self.get_weights()
         # array used to store sum of all the weights for current min-batch
         mini_batch_coefs = np.zeros(init_weight[0].shape, dtype=np.float64, order="C")
         mini_batch_intercept = np.zeros(init_weight[1].shape, dtype=np.float64, order="C")
 
-        for i in range(len(x)):
-            self.classifier.partial_fit(X[i],y[i])
+        for i in range(len(X)):
+            self.classifier.partial_fit(X[i:(i+1)],y[i:(i+1)])
 
             coef = self.classifier.coef_
             intercept = self.classifier.intercept_
 
             # save the weight per sample
-            new_coefs = np.add(new_coefs, coef)
-            new_intercept = np.add(new_intercept, intercept)
+            mini_batch_coefs = np.add(mini_batch_coefs, coef)
+            mini_batch_intercept = np.add(mini_batch_intercept, intercept)
 
 
             # refresh the classifier
@@ -95,12 +96,7 @@ class SGDModel:
             self.classifier.intercept_ = init_weight[1]
         
         # average against number of sample
-        mini_batch_coefs = np.true_divide(mini_batch_coefs, len(x))
-        mini_batch_intercept = np.true_divide(mini_batch_intercept, len(x))
-
+        mini_batch_coefs = np.true_divide(mini_batch_coefs, len(X))
+        mini_batch_intercept = np.true_divide(mini_batch_intercept, len(X))
 
         self.set_weights(mini_batch_coefs, mini_batch_intercept)
-
-        # TODO: implement. Need to consider how to set `t_` and `n_iter_`
-        
-        pass
