@@ -48,16 +48,21 @@ class Client:
     ):
         """Update the current model weights for FL using the client's data.
 
+        current_coef: current model coefficients to start from
+        current_intercept: current model intercept to start from
+        num_epochs: number of passes through the client data
+        batch_size: size of data minibatch used in each weight update step
+
         Resulting weights are submitted to the server.
         """
         self._model.set_weights(current_coef, current_intercept)
 
-        # TODO: split data into batches.
-
-        # TODO: update weights across batches and epochs.
+        batch_ind_list = self._get_batch_indices(batch_size)
         for epoch in range(num_epochs):
-            for i in range(num_batches):
-                self._run_model_update_step(batch_features[i], batch_labels[i])
+            for batch_ind in batch_ind_list:
+                self._run_model_update_step(
+                    self._features[batch_ind], self._labels[batch_ind]
+                )
 
         # TODO: submit new weights to the server via API request.
         # self._model.get_weights() -> server

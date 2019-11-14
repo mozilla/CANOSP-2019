@@ -43,6 +43,11 @@ def model():
 
 
 @pytest.fixture
+def client(features, labels, model):
+    return Client(client_id=None, features=features, labels=labels, model=model)
+
+
+@pytest.fixture
 def batched_indices_2():
     return [np.array(idx) for idx in SEEDED_BATCHED_2]
 
@@ -57,27 +62,53 @@ def reset_random_seed():
     np.random.seed(42)
 
 
-def test_batching(features, labels, batched_indices_2, batched_indices_3):
-    client = Client(client_id=None, features=features, labels=labels, model=None)
-
+def test_batching(client, batched_indices_2, batched_indices_3):
     reset_random_seed()
     # Batch size divides data evenly.
     batches_size_div = client._get_batch_indices(2)
     assert len(batches_size_div) == len(batched_indices_2)
     for actual, expected in zip(batches_size_div, batched_indices_2):
-        assert (actual == expected).all()
+        assert np.array_equal(actual, expected)
 
     reset_random_seed()
     # Batch size does not divide data evenly.
     batches_size_nondiv = client._get_batch_indices(3)
     assert len(batches_size_nondiv) == len(batched_indices_3)
     for actual, expected in zip(batches_size_nondiv, batched_indices_3):
-        assert (actual == expected).all()
+        assert np.array_equal(actual, expected)
 
 
-def test_update_weights():
+def test_update_weights(client, monkeypatch, batched_indices_2):
     # TODO: check weights and iteration counters t_, n_iter_ for correctness.
-    pass
+
+    # For now, skip model updating and just record what data gets passed.
+    model_update_data = []
+
+    def mock_model_update(X, y):
+        model_update_data.append((X, y))
+
+    monkeypatch.setattr(client, "_run_model_update_step", mock_model_update)
+
+    reset_random_seed()
+    client.update_and_submit_weights(
+        current_coef=None, current_intercept=None, num_epochs=1, batch_size=2
+    )
+    assert len(model_update_data) == len(batched_indices_2)
+    for (feat, lab), exp_ind in zip(model_update_data, batched_indices_2):
+        assert np.array_equal(feat, client._features[exp_ind])
+        assert np.array_equal(lab, client._labels[exp_ind])
+
+    reset_random_seed()
+    model_update_data = []
+    client.update_and_submit_weights(
+        current_coef=None, current_intercept=None, num_epochs=3, batch_size=2
+    )
+    batched_ind = batched_indices_2 * 3
+    print(batched_ind)
+    assert len(model_update_data) == len(batched_ind)
+    for (feat, lab), exp_ind in zip(model_update_data, batched_ind):
+        assert np.array_equal(feat, client._features[exp_ind])
+        assert np.array_equal(lab, client._labels[exp_ind])
 
 
 def test_update_weights_dp():
