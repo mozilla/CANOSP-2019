@@ -66,8 +66,15 @@ class SGDModel:
         self.classifier.intercept_ = intercept
 
     def get_weights(self):
-        """Return the current model weights as (coef, intercept)."""
-        return (self.classifier.coef_, self.classifier.intercept_)
+        """Return the current model weights as (coef, intercept).
+
+        If either weight component is not present (ie. the model has not been
+        initialized or trained), it will be None.
+        """
+        return (
+            getattr(self.classifier, "coef_", None),
+            getattr(self.classifier, "intercept_", None),
+        )
 
     def minibatch_update(self, X, y):
         """Run a single weight update on the given minibatch.
