@@ -82,26 +82,23 @@ class SGDModel:
         X and y should be arrays of the appropriate dimensions as required by
         `SGDClassifier.fit()`.
         """
-        init_weight = self.get_weights()
+        init_coef, init_intercept = self.get_weights()
         # array used to store sum of all the weights for current min-batch
-        mini_batch_coefs = np.zeros(init_weight[0].shape, dtype=np.float64, order="C")
+        mini_batch_coefs = np.zeros(init_coef.shape, dtype=np.float64, order="C")
         mini_batch_intercept = np.zeros(
-            init_weight[1].shape, dtype=np.float64, order="C"
+            init_intercept.shape, dtype=np.float64, order="C"
         )
 
         for i in range(len(X)):
             self.classifier.partial_fit(X[i : (i + 1)], y[i : (i + 1)])
 
-            coef = self.classifier.coef_
-            intercept = self.classifier.intercept_
-
+            coef, intercept = self.get_weights()
             # save the weight per sample
             mini_batch_coefs = np.add(mini_batch_coefs, coef)
             mini_batch_intercept = np.add(mini_batch_intercept, intercept)
 
             # refresh the classifier
-            self.classifier.coef_ = init_weight[0]
-            self.classifier.intercept_ = init_weight[1]
+            self.set_weights(init_coef, init_intercept)
 
         # average against number of sample
         mini_batch_coefs = np.true_divide(mini_batch_coefs, len(X))
