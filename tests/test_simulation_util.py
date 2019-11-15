@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import pytest
-from mozfldp.simulation_util import client_update
+from mozfldp.simulation_util import client_update, server_update
 import numpy as np
 
 def test_simulation_util():
@@ -38,6 +38,34 @@ def test_client_update():
 
     assert new_coefs == expected_coefs
     assert new_intercepts == expected_intercepts
+
+def test_server_update():
+    np.random.seed(0)
+
+    init_weights = [np.array([0., 0., 0.]), np.array([0.])] 
+    num_client = 10
+    samples_per_client = 10
+    num_features = 3
+    features = np.random.randint(10, size=(num_client, samples_per_client, num_features))
+    labels = np.random.randint(2, size=(num_client, samples_per_client))
+
+    classifier = server_update(
+        init_weights,
+        client_fraction=0.5,
+        num_rounds=2,
+        features=features,
+        labels=labels,
+        epoch=2,
+        batch_size=3,
+        display_weight_per_round=False,
+        rand_seed=0
+    )
+
+    expected_coefs = [-42.21600518468813, 3.4301014509740986, 30.442381328564878]
+    expected_intercepts = [-1.0702357064270938]
+
+    assert classifier.coef_.tolist()[0] == expected_coefs
+    assert classifier.intercept_.tolist() == expected_intercepts
 
 
 @pytest.mark.skip("some reason goes here")
