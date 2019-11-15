@@ -4,14 +4,17 @@
 
 from flask import Flask
 from flask import request
-import numpy as np
 import argparse
-import json
 
 # TODO: this needs to manually copied in right now.
 
 # we should package up the canosp project as a pypi project so we can
 # just import it like any other module.
+
+from mozfldp.simulation_util import server_update  # noqa
+
+from sklearn.linear_model import SGDClassifier
+
 
 app = Flask(__name__)
 
@@ -23,66 +26,53 @@ class ServerFacade:
     into a classifier.
     """
 
-    def __init__(self, coef, intercept, num_client, client_fraction):
-        """
-        TOOD: add detailed docstring explaining each argument,
-        referencing the paper
-        """
-        self._coef = coef
-        self._intercept = intercept
+    def __init__(self):
+        self._classifier = SGDClassifier(loss="hinge", penalty="l2")
 
-        self._num_client = num_client
-        self._client_fraction = client_fraction
-        # grab all the weights from clients
-        self._client_coefs = []
-        self._client_intercepts = []
-
-        self._num_samples = []
+        self._buffer = {"some_client_uuid_1": [], "some_client_uuid_2": []}
 
     def ingest_client_data(self, client_json):
+        # TODO: we need to read one sample of data from a client and
+        # add it to a sample buffer.  The intent here is that we want
+        # to collect enough data that we can safely sample from the
+        # buffer
+
+        # Assume that client_json is some JSON blob with everything we
+        # need to call client_update successfully.  We should have a
+        # `client_id` key that uniquely identifies the client so that
+        # we can pin data to a particular client.
+
+        # TODO: maybe something like this?
+        # self._buffer[client_json['client_id']].append(client_json)
+        pass
+
+    def update_classifier(self):
+        # TODO: this is where the magic happens
+        #
+        # I think roughly, this should be applying a sample of client
+        # data through a training loop.
+        #
+        # I believe you want to take the code from:
+        # https://github.com/mozilla/CANOSP-2019/blob/master/simulation_util.py#L98
+        # to
+        # https://github.com/mozilla/CANOSP-2019/blob/master/simulation_util.py#L149
+        # and update the parameters of the SGDClassifier.
+        #
+        # The samples `S` in simulation_util.py would be equivalent to self._buffer
+        # in this class
+        pass
+
+    def classify(self, some_input_json):
         """
-        TODO: add a docstring for each of these arguments
-
-        `num_features` - this argument may be able to be removed.
-        Someone needs to check if we can extract it from coefs matrix?
+        Apply the classifer to some sample input
         """
-        client_json = json.loads(client_json)
-        self._client_coefs.append(client_json["coefs"])
-        self._client_intercepts.append(client_json["intercept"])
-        self._num_samples.append(client_json["num_features"])
+        reshaped_X_test = None
+        reshaped_Y_test = None
+        score = self._classifier.score(reshaped_X_test, reshaped_Y_test)
+        return score
 
-    def compute_new_weights(self):
-        # calculate the new server weights based on new weights coming from client
-        new_coefs = np.zeros(self._coef.shape, dtype=np.float64, order="C")
-        new_intercept = np.zeros(self._intercept.shape, dtype=np.float64, order="C")
 
-        for index, (client_coef, client_intercept) in enumerate(
-            zip(self._client_coefs, self._client_intercepts)
-        ):
-            n_k = self._num_samples[index]
-            added_coef = [
-                np.array(value) * (n_k) / sum(self._num_samples) for value in client_coef
-            ]
-            added_intercept = [
-                np.array(value) * (n_k) / sum(self._num_samples) for value in client_intercept
-            ]
-
-            new_coefs = np.add(new_coefs, added_coef)
-            new_intercept = np.add(new_intercept, added_intercept)
-
-        # update the server weights to newly calculated weights
-        print("Updated Weights: ", new_coefs, new_intercept)
-
-        self._coef = new_coefs
-        self._intercept = new_intercept
-
-        # reset the state for the next round of learning
-        self._client_coefs = None
-        self._client_intercepts = None
-        self._num_samples = []
-
-        return self._coef, self._intercept
-
+server = ServerFacade()
 
 # TODO: you'll need to add server routes for `update_classifier` and
 # `classify` to allow them to be invoked over the web.
@@ -96,6 +86,8 @@ def client_update(client_id):
     # ingested at the server.
     msg = "Client ID: [{}].\nJSON Payload: {}".format(client_id, str(payload))
     print(msg)
+
+    server.ingest_client_data(payload)
 
     # TODO: you probably want to send some kind of useful feedback to
     # clients that the data was ingested by the server
