@@ -40,7 +40,7 @@ docker build . -t mozfldp:latest
 You can run the server locally serving requests on port 8000 using:
 
 ```
-python mozfldp/server.py
+python -m mozfldp.server
 ```
 
 Alternately, you can run the service in a container using :

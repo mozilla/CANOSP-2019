@@ -2,8 +2,10 @@ import json
 
 from mozfldp import random_data_gen
 from mozfldp.simulation_util import client_update, server_update
+from mozfldp.fed_avg_w_dp import run_fed_avg_with_dp, FedAvgWithDpParams
 
 import pandas as pd
+import sklearn
 from sklearn.model_selection import ParameterGrid, train_test_split
 import numpy as np
 
@@ -46,6 +48,7 @@ def run_fed_learn_sim(s_prms, data):
     num_rounds = s_prms[Runner.P_KEY_NUM_ROUNDS]
     batch_size = s_prms[Runner.P_KEY_BATCH_SIZE]
     num_epochs = s_prms[Runner.P_KEY_NUM_EPOCHS]
+    rand_seed = s_prms[Runner.P_KEY_RAND_SEED]
 
     # Note: data is already transformed for sim format
 
@@ -55,7 +58,7 @@ def run_fed_learn_sim(s_prms, data):
 
     # Split the data into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(
-        features, labels, test_size=0.4, random_state=0
+        features, labels, test_size=0.4, random_state=rand_seed
     )
 
     init_weights = np.zeros((num_labels, num_features), dtype=np.float64, order="C")
@@ -83,6 +86,7 @@ def run_fed_learn_sim(s_prms, data):
             params["epoch"],
             params["batch_size"],
             False,
+            rand_seed,
         )
         weights = [classifier.coef_, classifier.intercept_]
 
@@ -99,8 +103,52 @@ def run_fed_learn_sim(s_prms, data):
         print("Weights: {}\nScore: {:f}\n\n".format(weights, score))
 
 
-def run_fed_avg_with_dp(sim_params, data):
-    print("TODO: Implement Federated Averaging with DP!")
+def fed_avg_with_dp(s_prms, data):
+    prms = FedAvgWithDpParams(
+        s_prms[Runner.P_KEY_NUM_USERS],
+        s_prms[Runner.P_KEY_NUM_FEATURES],
+        s_prms[Runner.P_KEY_NUM_LABELS],
+        s_prms[Runner.P_KEY_NUM_ROUNDS],
+        s_prms[Runner.P_KEY_BATCH_SIZE],
+        s_prms[Runner.P_KEY_NUM_EPOCHS],
+        s_prms[Runner.P_KEY_WEIGHT_MOD],
+        s_prms[Runner.P_KEY_USER_SEL_PROB],
+        s_prms[Runner.P_KEY_SENSITIVITY],
+        s_prms[Runner.P_KEY_NOISE_SCALE],
+        s_prms[Runner.P_KEY_RAND_SEED],
+    )
+
+    labels, features = data
+    labels = np.array(labels)
+    features = np.array(features)
+
+    # Split the data into training and testing sets
+    feat_train, feat_test, label_train, label_test = train_test_split(
+        features, labels, test_size=0.4, random_state=prms.rand_seed
+    )
+
+    # Since we are breaking the data into testing/training sets, we need to update the num_users parameter for the sim (since 100 users --> 60)
+    prms.num_users = len(feat_train)
+
+    training_data = [label_train, feat_train]
+    [trained_coef, trained_inter] = run_fed_avg_with_dp(prms, training_data)
+
+    clf = sklearn.linear_model.SGDClassifier(
+        loss="hinge", penalty="l2", random_state=prms.rand_seed
+    )
+    clf.coef_ = trained_coef
+    clf.intercept_ = trained_inter
+    clf.classes_ = np.unique(labels)
+
+    # Remove client dimension from arrays...
+    reshaped_feat_test = np.reshape(
+        feat_test, (feat_test.shape[0] * feat_test.shape[1], feat_test.shape[2])
+    )
+
+    reshaped_label_test = np.reshape(label_test, label_test.size)
+
+    score = clf.score(reshaped_feat_test, reshaped_label_test)
+    print("Score: {}".format(score))
 
 
 class RunnerException(Exception):
@@ -126,6 +174,12 @@ class Runner:
     P_KEY_NUM_ROUNDS = "num_rounds"
     P_KEY_BATCH_SIZE = "batch_size"
     P_KEY_NUM_EPOCHS = "num_epochs"
+    P_KEY_RAND_SEED = "rand_seed"
+
+    P_KEY_WEIGHT_MOD = "weight_mod"
+    P_KEY_USER_SEL_PROB = "user_sel_prob"
+    P_KEY_SENSITIVITY = "sensitivity"
+    P_KEY_NOISE_SCALE = "noise_scale"
 
     _sim_run_func_ltable = {
         SIM_TYPE_FED_LEARNING: (
@@ -137,11 +191,23 @@ class Runner:
                 P_KEY_NUM_SAMPLES,
                 P_KEY_NUM_FEATURES,
                 P_KEY_NUM_USERS,
+                P_KEY_RAND_SEED,
             },
         ),
         SIM_TYPE_FED_AVG_WITH_DP: (
-            run_fed_avg_with_dp,
-            {P_KEY_NUM_LABELS, P_KEY_NUM_FEATURES},
+            fed_avg_with_dp,
+            {
+                P_KEY_NUM_USERS,
+                P_KEY_NUM_LABELS,
+                P_KEY_NUM_FEATURES,
+                P_KEY_NUM_ROUNDS,
+                P_KEY_BATCH_SIZE,
+                P_KEY_NUM_EPOCHS,
+                P_KEY_WEIGHT_MOD,
+                P_KEY_USER_SEL_PROB,
+                P_KEY_SENSITIVITY,
+                P_KEY_NOISE_SCALE,
+            },
         ),
     }
 
