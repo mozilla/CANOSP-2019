@@ -43,13 +43,13 @@ class ServerFacade:
         """
         TODO: add a docstring for each of these arguments
 
-        `num_features` - this argument may be able to be removed.
+        `num_samples` - this argument may be able to be removed.
         Someone needs to check if we can extract it from coefs matrix?
         """
         client_json = json.loads(client_json)
         self._client_coefs.append(client_json["coefs"])
         self._client_intercepts.append(client_json["intercept"])
-        self._num_samples.append(client_json["num_features"])
+        self._num_samples.append(client_json["num_samples"])
 
     def compute_new_weights(self):
         # calculate the new server weights based on new weights coming from client

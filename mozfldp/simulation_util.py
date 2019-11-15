@@ -111,15 +111,15 @@ def server_update(
         user_ids = np.array(random.sample(range(client_num), m))
 
         for user_id in user_ids:
-            client_feature = features[user_id]
-            num_features = len(client_feature)
-            client_label = labels[user_id]
+            client_features = features[user_id]
+            num_samples = len(client_features)
+            client_labels = labels[user_id]
             coefs, intercept = client_update(
                 [coef, intercept],
                 epoch,
                 batch_size,
-                client_feature,
-                client_label,
+                client_features,
+                client_labels,
                 all_classes,
                 rand_seed,
             )
@@ -128,7 +128,7 @@ def server_update(
             payload = {
                 "coefs": coefs.tolist(),
                 "intercept": intercept.tolist(),
-                "num_features": num_features
+                "num_samples": num_samples
             };
             serv.ingest_client_data(json.dumps(payload))
 
