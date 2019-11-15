@@ -60,12 +60,14 @@ def test_server_update():
         display_weight_per_round=False,
         rand_seed=0
     )
+    new_coefs = classifier.coef_.tolist()[0]
+    new_intercepts = classifier.intercept_.tolist()
 
     expected_coefs = [-42.21600518468813, 3.4301014509740986, 30.442381328564878]
     expected_intercepts = [-1.0702357064270938]
 
-    assert classifier.coef_.tolist()[0] == expected_coefs
-    assert classifier.intercept_.tolist() == expected_intercepts
+    assert new_coefs == expected_coefs
+    assert new_intercepts == expected_intercepts
 
 
 @pytest.mark.skip("some reason goes here")
