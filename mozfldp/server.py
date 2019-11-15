@@ -6,6 +6,7 @@ from flask import Flask
 from flask import request
 import numpy as np
 import argparse
+import json
 
 # TODO: this needs to manually copied in right now.
 
@@ -53,6 +54,7 @@ class ServerFacade:
         `num_features` - this argument may be able to be removed.
         Someone needs to check if we can extract it from coefs matrix?
         """
+        client_json = json.loads(client_json)
         self._client_coefs = append(self._client_coefs, client_json["coefs"])
         self._client_intercepts = append(self._client_intercepts, client_json["intercept"])
         self._num_samples.append(client_json["num_features"])
@@ -82,15 +84,12 @@ class ServerFacade:
         self._coef = new_coefs
         self._intercept = new_intercept
 
-        """
-        TODO: do something  here to reset the state of :
 
-            self._num_client = num_client
-            self._client_fraction = client_fraction
-            self._client_coefs = None
-            self._client_intercepts = None
-            self._num_samples = []
-        """
+        # reset the state for the next round of learning
+        self._client_coefs = None
+        self._client_intercepts = None
+        self._num_samples = []
+
         return self._coef, self._intercept
 
 

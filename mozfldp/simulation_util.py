@@ -2,7 +2,7 @@ from sklearn.linear_model import SGDClassifier
 import numpy as np
 import random
 import mozfldp.server as server
-
+import json
 
 def client_update(
     init_weights, epochs, batch_size, features, labels, all_classes, rand_seed
@@ -126,11 +126,11 @@ def server_update(
 
             # this will get moved to the end of Client.update_and_submit_weights
             payload = {
-                "coefs": coefs,
-                "intercept": intercept,
+                "coefs": coefs.tolist(),
+                "intercept": intercept.tolist(),
                 "num_features": num_features
             };
-            serv.ingest_client_data(payload)
+            serv.ingest_client_data(json.dumps(payload))
 
     coef, intercept = serv.compute_new_weights()
 
