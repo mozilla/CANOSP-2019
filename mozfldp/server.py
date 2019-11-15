@@ -84,7 +84,6 @@ class ServerFacade:
         self._coef = new_coefs
         self._intercept = new_intercept
 
-
         # reset the state for the next round of learning
         self._client_coefs = None
         self._client_intercepts = None
