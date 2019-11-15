@@ -81,6 +81,10 @@ class SGDModel:
 
         X and y should be arrays of the appropriate dimensions as required by
         `SGDClassifier.fit()`.
+
+        Note that the internal `SGDClassifier` step counter `t_` increments
+        once for each training example in the minibatch. This is used in the
+        adaptive learning rate.
         """
         init_coef, init_intercept = self.get_weights()
         # array used to store sum of all the weights for current min-batch
