@@ -45,7 +45,7 @@ class ServerFacade:
         `num_features` - this argument may be able to be removed.
         Someone needs to check if we can extract it from coefs matrix?
         """
-       
+
         self._client_coefs.append(coefs)
         self._client_intercepts.append(intercept)
         self._num_samples.append(num_features)
@@ -58,8 +58,6 @@ class ServerFacade:
         for index, (client_coef, client_intercept) in enumerate(
             zip(self._client_coefs, self._client_intercepts)
         ):
-            # print(self._client_coefs.shape)
-            # print(len(self._num_samples))
             n_k = self._num_samples[index]
             added_coef = [
                 value * (n_k) / sum(self._num_samples) for value in client_coef
@@ -87,7 +85,6 @@ class ServerFacade:
             self._num_samples = []
         """
         return self._coef, self._intercept
-
 
 
 # TODO: you'll need to add server routes for `update_classifier` and
