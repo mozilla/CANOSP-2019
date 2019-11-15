@@ -12,15 +12,6 @@ import argparse
 # we should package up the canosp project as a pypi project so we can
 # just import it like any other module.
 
-
-
-def append(list, element):
-    """
-    helper function to append array into array in numpy
-    """
-    return np.concatenate((list, [element])) if list is not None else [element]
-
-
 app = Flask(__name__)
 
 
@@ -42,8 +33,9 @@ class ServerFacade:
         self._num_client = num_client
         self._client_fraction = client_fraction
         # grab all the weights from clients
-        self._client_coefs = None
-        self._client_intercepts = None
+        self._client_coefs = []
+        self._client_intercepts = []
+
         self._num_samples = []
 
     def send_weights(self, coefs, intercept, num_features):
@@ -53,8 +45,9 @@ class ServerFacade:
         `num_features` - this argument may be able to be removed.
         Someone needs to check if we can extract it from coefs matrix?
         """
-        self._client_coefs = append(self._client_coefs, coefs)
-        self._client_intercepts = append(self._client_intercepts, intercept)
+       
+        self._client_coefs.append(coefs)
+        self._client_intercepts.append(intercept)
         self._num_samples.append(num_features)
 
     def compute_new_weights(self):
@@ -65,6 +58,8 @@ class ServerFacade:
         for index, (client_coef, client_intercept) in enumerate(
             zip(self._client_coefs, self._client_intercepts)
         ):
+            # print(self._client_coefs.shape)
+            # print(len(self._num_samples))
             n_k = self._num_samples[index]
             added_coef = [
                 value * (n_k) / sum(self._num_samples) for value in client_coef
