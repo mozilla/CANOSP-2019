@@ -124,7 +124,13 @@ def server_update(
                 rand_seed,
             )
 
-            serv.send_weights(coefs, intercept, num_features)
+            # this will get moved to the end of Client.update_and_submit_weights
+            payload = {
+                "coefs": coefs,
+                "intercept": intercept,
+                "num_features": num_features
+            };
+            serv.ingest_client_data(payload)
 
     coef, intercept = serv.compute_new_weights()
 

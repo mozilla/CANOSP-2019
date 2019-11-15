@@ -46,16 +46,16 @@ class ServerFacade:
         self._client_intercepts = None
         self._num_samples = []
 
-    def send_weights(self, coefs, intercept, num_features):
+    def ingest_client_data(self, client_json):
         """
         TODO: add a docstring for each of these arguments
 
         `num_features` - this argument may be able to be removed.
         Someone needs to check if we can extract it from coefs matrix?
         """
-        self._client_coefs = append(self._client_coefs, coefs)
-        self._client_intercepts = append(self._client_intercepts, intercept)
-        self._num_samples.append(num_features)
+        self._client_coefs = append(self._client_coefs, client_json["coefs"])
+        self._client_intercepts = append(self._client_intercepts, client_json["intercept"])
+        self._num_samples.append(client_json["num_features"])
 
     def compute_new_weights(self):
         # calculate the new server weights based on new weights coming from client
