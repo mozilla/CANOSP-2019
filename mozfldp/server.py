@@ -21,30 +21,31 @@ class ServerFacade:
     This class acts as a facade around the functions in
     `simulation_util` to provide a consistent interface to load data
     into a classifier.
+
+    Args: 
+        coef: initial coefficients to initialize the server with
+        intercept: initial intercepts to initialize the server with
+        num_client: number of clients that are available
+        client_fraction: (C in algorithm) - fraction of clients that we want to use in a round
     """
 
     def __init__(self, coef, intercept, num_client, client_fraction):
-        """
-        TOOD: add detailed docstring explaining each argument,
-        referencing the paper
-        """
         self._coef = coef
         self._intercept = intercept
 
         self._num_client = num_client
         self._client_fraction = client_fraction
-        # grab all the weights from clients
+
         self._client_coefs = []
         self._client_intercepts = []
-
         self._num_samples = []
 
     def ingest_client_data(self, client_json):
         """
-        TODO: add a docstring for each of these arguments
-
-        `num_samples` - this argument may be able to be removed.
-        Someone needs to check if we can extract it from coefs matrix?
+        Accepts new weights from a client and stores them on the server side for averaging
+        
+        Args: 
+            client_json: a json object containing coefs, intercepts, and num_samples
         """
         client_json = json.loads(client_json)
         self._client_coefs.append(client_json["coefs"])
@@ -52,7 +53,11 @@ class ServerFacade:
         self._num_samples.append(client_json["num_samples"])
 
     def compute_new_weights(self):
-        # calculate the new server weights based on new weights coming from client
+        """ 
+        Applies the federated averaging on the stored client weights for this round
+        and return the new weights
+        """
+
         new_coefs = np.zeros(self._coef.shape, dtype=np.float64, order="C")
         new_intercept = np.zeros(self._intercept.shape, dtype=np.float64, order="C")
 
