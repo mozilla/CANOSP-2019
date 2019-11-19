@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import numpy as np
-import requests 
+import requests
 import json
 
 
@@ -81,12 +81,15 @@ class Client:
         coefs = weights[0]
         intercept = weights[1]
 
+        # load the client weight into json payload
         client_data = {}
         client_data["coefs"] = coefs
         client_data["intercept"] = intercept
+        payload = json.dumps(client_data)
 
+        # send the post request
         api_endpoint = "/api/v1/client_update/{}".format(self._id)
-        r = requests.post(url=api_endpoint, data=client_data) 
+        r = requests.post(url=api_endpoint, data=payload)
 
     def update_contrib_weight(contrib_weight_cap):
         """Set and return the contribution weight in terms of the given cap."""
