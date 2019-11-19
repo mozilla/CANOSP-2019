@@ -3,6 +3,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import numpy as np
+import requests 
+import json
 
 
 class Client:
@@ -75,6 +77,16 @@ class Client:
 
         # TODO: submit new weights to the server via API request.
         # self._model.get_weights() -> server
+        weights = self._model.get_weights()
+        coefs = weights[0]
+        intercept = weights[1]
+
+        client_data = {}
+        client_data["coefs"] = coefs
+        client_data["intercept"] = intercept
+
+        api_endpoint = "/api/v1/client_update/{}".format(self._id)
+        r = requests.post(url=api_endpoint, data=client_data) 
 
     def update_contrib_weight(contrib_weight_cap):
         """Set and return the contribution weight in terms of the given cap."""
