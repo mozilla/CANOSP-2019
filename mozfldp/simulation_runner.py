@@ -44,7 +44,7 @@ class BaseSimulationRunner:
         coef_init,
         intercept_init,
         test_data=None,
-        label_col="labels",
+        label_col="label",
         user_id_col="user_id",
     ):
         self._model = model
