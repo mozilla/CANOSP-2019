@@ -101,7 +101,7 @@ def server_update(
     # reseed the rng each run
     random.seed(rand_seed)
 
-    serv = server.ServerFacade(coef, intercept, client_num, client_fraction)
+    serv = server.ServerFacade(coef, intercept)
     
     # use to generate n_k so that the sum of n_k equals to n
     for i in range(num_rounds):

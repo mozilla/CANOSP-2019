@@ -23,17 +23,12 @@ def intercept():
 
 @pytest.fixture
 def server(coef, intercept):
-    return ServerFacade(
-        coef, intercept, num_client=NUM_CLIENTS, client_fraction=CLIENT_FRACTION
-    )
+    return ServerFacade(coef, intercept)
 
 
 def test_server_initialization(server, coef, intercept):
     np.testing.assert_array_equal(server._coef, coef)
     np.testing.assert_array_equal(server._intercept, intercept)
-
-    assert server._num_client == NUM_CLIENTS
-    assert server._client_fraction == CLIENT_FRACTION
 
     assert len(server._client_coefs) == 0
     assert len(server._client_intercepts) == 0

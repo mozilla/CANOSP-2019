@@ -27,12 +27,9 @@ class ServerFacade:
         client_fraction: (C in algorithm) - fraction of clients that we want to use in a round
     """
 
-    def __init__(self, coef, intercept, num_client, client_fraction):
+    def __init__(self, coef, intercept):
         self._coef = coef
         self._intercept = intercept
-
-        self._num_client = num_client
-        self._client_fraction = client_fraction
 
         self._client_coefs = []
         self._client_intercepts = []
@@ -176,14 +173,10 @@ def flaskrun(app, default_host="0.0.0.0", default_port="8000"):
 
     NUM_LABELS = 10
     NUM_FEATURES = 784
-    NUM_CLIENTS = 10
-    CLIENT_FRACTION = 0.5
     coef = np.zeros((NUM_LABELS, NUM_FEATURES), dtype=np.float64, order="C")
     intercept = np.zeros(NUM_LABELS, dtype=np.float64, order="C")
 
-    current_app.facade = ServerFacade(
-        coef, intercept, num_client=NUM_CLIENTS, client_fraction=CLIENT_FRACTION
-    )
+    current_app.facade = ServerFacade(coef, intercept)
 
     app.run(debug=args.debug, host=args.host, port=int(args.port))
 
