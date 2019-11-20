@@ -63,12 +63,14 @@ class ServerFacade:
             zip(self._client_coefs, self._client_intercepts)
         ):
             n_k = self._num_samples[index]
+            total_samples = sum(self._num_samples)
+
             added_coef = [
-                np.array(value) * (n_k) / sum(self._num_samples)
+                np.array(value) * (n_k) / total_samples
                 for value in client_coef
             ]
             added_intercept = [
-                np.array(value) * (n_k) / sum(self._num_samples)
+                np.array(value) * (n_k) / total_samples
                 for value in client_intercept
             ]
 
