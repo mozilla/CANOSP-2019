@@ -56,11 +56,11 @@ class ServerFacade:
         new_coefs = np.zeros(self._coef.shape, dtype=np.float64, order="C")
         new_intercept = np.zeros(self._intercept.shape, dtype=np.float64, order="C")
 
-        for index, (client_coef, client_intercept) in enumerate(
-            zip(self._client_coefs, self._client_intercepts)
+        total_samples = sum(self._num_samples)
+
+        for index, (client_coef, client_intercept, n_k) in enumerate(
+            zip(self._client_coefs, self._client_intercepts, self._num_samples)
         ):
-            n_k = self._num_samples[index]
-            total_samples = sum(self._num_samples)
 
             added_coef = [
                 np.array(value) * (n_k) / total_samples
