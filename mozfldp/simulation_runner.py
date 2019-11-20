@@ -12,7 +12,7 @@ import numpy as np
 
 def _format_data_for_model(dataset, label_col, user_id_col):
     """Split a DataFrame into feature & label arrays."""
-    if not dataset:
+    if dataset is None or len(dataset) == 0:
         return (None, None)
     if user_id_col in dataset.columns:
         dataset = dataset.drop(columns=user_id_col)
