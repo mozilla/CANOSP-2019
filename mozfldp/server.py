@@ -62,10 +62,12 @@ class ServerFacade:
         ):
             n_k = self._num_samples[index]
             added_coef = [
-                np.array(value) * (n_k) / sum(self._num_samples) for value in client_coef
+                np.array(value) * (n_k) / sum(self._num_samples)
+                for value in client_coef
             ]
             added_intercept = [
-                np.array(value) * (n_k) / sum(self._num_samples) for value in client_intercept
+                np.array(value) * (n_k) / sum(self._num_samples)
+                for value in client_intercept
             ]
 
             new_coefs = np.add(new_coefs, added_coef)
