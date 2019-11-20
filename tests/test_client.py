@@ -4,6 +4,7 @@
 
 import pytest
 import numpy as np
+from unittest.mock import Mock, patch
 
 from mozfldp.client import Client
 from mozfldp.model import SGDModel
@@ -85,7 +86,6 @@ def test_batching(client, batched_indices_2, batched_indices_3):
     batch_ind = [np.ravel(batched_indices_2)]
     compare_batch_indices(batches_size_exceed, batch_ind)
 
-
 def test_update_weights(client, monkeypatch, batched_indices_2):
     # TODO: check weights and iteration counters t_, n_iter_ for correctness.
 
@@ -98,6 +98,10 @@ def test_update_weights(client, monkeypatch, batched_indices_2):
     monkeypatch.setattr(client, "_run_model_update_step", mock_model_update)
 
     reset_random_seed()
+    # mock the post request 
+    mock_post_patcher = patch('mozfldp.client.requests.post')
+    mock_post = mock_post_patcher.start()
+    mock_post.return_value.ok = True
     client.update_and_submit_weights(
         current_coef=None, current_intercept=None, num_epochs=1, batch_size=2
     )
@@ -118,6 +122,8 @@ def test_update_weights(client, monkeypatch, batched_indices_2):
         assert np.array_equal(feat, client._features[exp_ind])
         assert np.array_equal(lab, client._labels[exp_ind])
 
+    # stop mocking the request
+    mock_post_patcher.stop()
 
 def test_update_weights_dp():
     pass
