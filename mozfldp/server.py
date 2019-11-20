@@ -8,10 +8,6 @@ import numpy as np
 import argparse
 import json
 
-# TODO: this needs to manually copied in right now.
-
-# we should package up the canosp project as a pypi project so we can
-# just import it like any other module.
 
 app = Flask(__name__)
 
@@ -89,8 +85,6 @@ class ServerFacade:
         return self._coef, self._intercept
 
 
-# TODO: you'll need to add server routes for `update_classifier` and
-# `classify` to allow them to be invoked over the web.
 
 
 @app.route("/api/v1/client_update/<string:client_id>", methods=["POST"])
