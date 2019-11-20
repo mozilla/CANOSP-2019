@@ -183,4 +183,5 @@ def flaskrun(app, default_host="0.0.0.0", default_port="8000"):
 
 
 if __name__ == "__main__":
-    flaskrun(app)
+    with app.app_context():
+        flaskrun(app)
