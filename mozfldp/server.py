@@ -23,14 +23,15 @@ class ServerFacade:
     Args: 
         coef: initial coefficients to initialize the server with
         intercept: initial intercepts to initialize the server with
-        num_client: number of clients that are available
-        client_fraction: (C in algorithm) - fraction of clients that we want to use in a round
     """
 
     def __init__(self, coef, intercept):
         self._coef = coef
         self._intercept = intercept
 
+        self.reset_client_data()
+    
+    def reset_client_data(self):
         self._client_coefs = []
         self._client_intercepts = []
         self._num_samples = []
@@ -75,15 +76,11 @@ class ServerFacade:
             new_intercept = np.add(new_intercept, added_intercept)
 
         # update the server weights to newly calculated weights
-        print("Updated Weights: ", new_coefs, new_intercept)
-
         self._coef = new_coefs
         self._intercept = new_intercept
 
-        # reset the state for the next round of learning
-        self._client_coefs = None
-        self._client_intercepts = None
-        self._num_samples = []
+        # reset all client data so it doesn't get used for the next round
+        self.reset_client_data()
 
         return self._coef, self._intercept
 
