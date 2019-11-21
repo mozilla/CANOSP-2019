@@ -27,9 +27,7 @@ class TestMergeAllUserThetas:
         # Numerator:    [7.5, 17.5, 25, 32.5]
         # Denominator:  0.1 * 5.0
 
-        res = TestMergeAllUserThetas._run_merge_func(
-            TestMergeAllUserThetas.user_thetas[:2]
-        )
+        res = self._run_merge_func(TestMergeAllUserThetas.user_thetas[:2])
         assert _lists_equal(res, [15, 35, 50, 65])
 
     def test_one_weight_returns_theta_over_user_sel_prob(self):
@@ -38,13 +36,14 @@ class TestMergeAllUserThetas:
         # Numerator: [1, 2, 3, 4]
         # Denominator: [0.1]
 
-        res = TestMergeAllUserThetas._run_merge_func(
-            TestMergeAllUserThetas.user_thetas[:1]
-        )
+        res = self._run_merge_func(TestMergeAllUserThetas.user_thetas[:1])
         assert _lists_equal(res, [10, 20, 30, 40])
 
     def _run_merge_func(
-        user_thetas, user_sel_prob=DEFAULT_USER_SEL_PROB, weight_sum=DEFAULT_WEIGHT_SUM
+        self,
+        user_thetas,
+        user_sel_prob=DEFAULT_USER_SEL_PROB,
+        weight_sum=DEFAULT_WEIGHT_SUM,
     ):
         num_users = len(user_thetas)
         user_weights = [DEFAULT_WEIGHT_SUM / num_users] * num_users
@@ -181,7 +180,7 @@ class TestFedAvgWDPHighLevel:
         }
 
 
-#### Small tests ####
+# Small tests
 
 
 def test_setting_theta_values_are_set_properly():
@@ -224,13 +223,15 @@ def test_batching_user_data():
     user_features = [[1, 2], [3, 4], [5, 6], [7, 8]]
     user_labels = [7, 8, 9, 10]
 
-    batched_feats, batched_labels = fed_avg_w_dp._break_user_update_data_into_batches(batch_size, 4, user_features, user_labels)
+    batched_feats, batched_labels = fed_avg_w_dp._break_user_update_data_into_batches(
+        batch_size, 4, user_features, user_labels
+    )
 
     assert _lists_equal(batched_labels[0], [7, 8])
     assert _lists_equal(batched_feats[0], [[1, 2], [3, 4]])
 
 
-#### Helper functions ####
+# Helper functions
 
 
 def _lists_equal(l1, l2):

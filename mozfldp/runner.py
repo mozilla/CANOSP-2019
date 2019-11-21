@@ -1,7 +1,7 @@
 import json
 
 from mozfldp import random_data_gen
-from mozfldp.simulation_util import client_update, server_update
+from mozfldp.simulation_util import server_update
 from mozfldp.fed_avg_w_dp import run_fed_avg_with_dp, FedAvgWithDpParams
 
 import pandas as pd
@@ -104,6 +104,7 @@ def run_fed_learn_sim(s_prms, data):
 
         return score
 
+
 def fed_avg_with_dp(s_prms, data):
     prms = FedAvgWithDpParams(
         s_prms[Runner.P_KEY_NUM_USERS],
@@ -128,7 +129,9 @@ def fed_avg_with_dp(s_prms, data):
         features, labels, test_size=0.4, random_state=prms.rand_seed
     )
 
-    # Since we are breaking the data into testing/training sets, we need to update the num_users parameter for the sim (since 100 users --> 60)
+    # Since we are breaking the data into testing/training sets, we
+    # need to update the num_users parameter for the sim (since 100
+    # users --> 60)
     prms.num_users = len(feat_train)
 
     training_data = [label_train, feat_train]
