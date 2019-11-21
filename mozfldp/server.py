@@ -4,7 +4,6 @@
 
 from flask import Flask
 from flask import request
-from flask import current_app
 from flask import jsonify
 import numpy as np
 import argparse
@@ -20,7 +19,7 @@ class ServerFacade:
     `simulation_util` to provide a consistent interface to load data
     into a classifier.
 
-    Args: 
+    Args:
         coef: initial coefficients to initialize the server with
         intercept: initial intercepts to initialize the server with
     """
@@ -39,8 +38,8 @@ class ServerFacade:
     def ingest_client_data(self, client_json):
         """
         Accepts new weights from a client and stores them on the server side for averaging
-        
-        Args: 
+
+        Args:
             client_json: a json object containing coefs, intercepts, and num_samples
         """
         client_json = json.loads(client_json)
@@ -49,7 +48,7 @@ class ServerFacade:
         self._num_samples.append(client_json["num_samples"])
 
     def compute_new_weights(self):
-        """ 
+        """
         Applies the federated averaging on the stored client weights for this round
         and return the new weights
         """
@@ -110,7 +109,7 @@ def handle_invalid_client_data(error):
 def ingest_client_data(client_id):
     payload = request.get_json()
     try:
-        current_app.facade.ingest_client_data(payload)
+        app.facade.ingest_client_data(payload)
         return {"result": "ok"}
     except Exception as exc:
         raise InvalidClientData(
@@ -121,8 +120,9 @@ def ingest_client_data(client_id):
 @app.route("/api/v1/compute_new_weights", methods=["POST"])
 def compute_new_weights():
     try:
-        weights = current_app.facade.compute_new_weights()
-        return {"result": "ok", "weights": weights}
+        weights = app.facade.compute_new_weights()
+        json_safe_weights = [w.tolist() for w in weights]
+        return {"result": "ok", "weights": json_safe_weights}
     except Exception as exc:
         raise InvalidClientData(
             "Error computing weights", payload={"exception": str(exc)}
@@ -171,7 +171,7 @@ def flaskrun(app, default_host="0.0.0.0", default_port="8000"):
     coef = np.zeros((NUM_LABELS, NUM_FEATURES), dtype=np.float64, order="C")
     intercept = np.zeros(NUM_LABELS, dtype=np.float64, order="C")
 
-    current_app.facade = ServerFacade(coef, intercept)
+    app.facade = ServerFacade(coef, intercept)
 
     app.run(debug=args.debug, host=args.host, port=int(args.port))
 

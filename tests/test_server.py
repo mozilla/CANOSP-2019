@@ -1,8 +1,13 @@
-import pytest
-import numpy as np
+from unittest.mock import MagicMock
 import json
 
+import numpy as np
+import pytest
+
 from mozfldp.server import ServerFacade
+from mozfldp.server import app as base_app
+from mozfldp.server import compute_new_weights
+
 
 NUM_LABELS = 10
 NUM_FEATURES = 784
@@ -89,3 +94,21 @@ def test_compute_new_weights(server, coef, intercept):
 
     np.testing.assert_array_equal(new_coef, expected_coef)
     np.testing.assert_array_equal(new_intercept, expected_intercept)
+
+
+@pytest.fixture
+def app():
+    app = base_app
+    app.facade = MagicMock()
+    app.facade.compute_new_weights = MagicMock(
+        return_value=[np.array([1, 2, 3]), np.array([4, 5, 6])]
+    )
+    return app
+
+
+def test_request_compute_weights(app):
+    """
+    Test that compute_new_weights returns valid JSON
+    """
+    result = compute_new_weights()
+    assert result == {'result': 'ok', 'weights': [[1, 2, 3], [4, 5, 6]]}
