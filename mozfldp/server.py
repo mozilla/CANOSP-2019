@@ -82,6 +82,17 @@ class ServerFacade:
 
         return self._coef, self._intercept
 
+    def compute_new_weights_dp(self, standard_dev, avg_denom):
+        """
+        Applies the DP-protected federated averaging on the stored client weights
+        for this round and return the new weights.
+
+        standard_dev: the standard deviation of the random noise to apply
+        avg_denom: the denominator to use in computing the average
+        """
+        # TODO: DP version of fed averaging.
+        pass
+
 
 class InvalidClientData(Exception):
     status_code = 500

@@ -83,22 +83,42 @@ class BaseSimulationRunner:
 class FLSimulationRunner(BaseSimulationRunner):
     """Simulation runner for standard federated learning.
 
-    In addition to model, data and initial weights, supply:
+    In addition to model, data and initial weights as required by
+    `BaseSimulationRunner`, supply:
 
     num_epochs: number of passes through each client's dataset on each round.
     client_fraction: target fraction of clients on which to run updates on each
         round.
     batch_size: target size of client minibatches. Weights are updated once per
         minibatch on each client in a given round.
-    kwargs: other args passed to BaseSimulationRunner
     """
 
-    def __init__(self, num_epochs, client_fraction, batch_size, **kwargs):
+    def __init__(
+        self,
+        num_epochs,
+        client_fraction,
+        batch_size,
+        model,
+        training_data,
+        coef_init,
+        intercept_init,
+        test_data=None,
+        label_col="label",
+        user_id_col="user_id",
+    ):
         self._num_epochs = num_epochs
         self._client_fraction = client_fraction
         self._batch_size = batch_size
 
-        super().__init__(**kwargs)
+        super().__init__(
+            model,
+            training_data,
+            coef_init,
+            intercept_init,
+            test_data,
+            label_col,
+            user_id_col,
+        )
 
     def run_simulation_round(self):
         """Perform a single round of federated learning."""
@@ -137,7 +157,8 @@ class FLSimulationRunner(BaseSimulationRunner):
 class FLDPSimulationRunner(BaseSimulationRunner):
     """Simulation runner for federated learning with DP.
 
-    In addition to model, data and initial weights, supply:
+    In addition to model, data and initial weights as required by
+    `BaseSimulationRunner`, supply:
 
     num_epochs: number of passes through each client's dataset on each round.
     client_fraction: target fraction of clients on which to run updates on each
@@ -149,7 +170,69 @@ class FLDPSimulationRunner(BaseSimulationRunner):
         spent on each round.
     user_weight_cap: limit on the influence of a single user in the federated
         averaging
-    kwargs: other args passed to BaseSimulationRunner
     """
 
-    pass
+    def __init__(
+        self,
+        num_epochs,
+        client_fraction,
+        batch_size,
+        sensitivity,
+        noise_scale,
+        user_weight_cap,
+        model,
+        training_data,
+        coef_init,
+        intercept_init,
+        test_data=None,
+        label_col="label",
+        user_id_col="user_id",
+    ):
+        self._num_epochs = num_epochs
+        self._client_fraction = client_fraction
+        self._batch_size = batch_size
+        self._sensitivity = sensitivity
+        self._noise_scale = noise_scale
+        self._user_weight_cap = user_weight_cap
+
+        super().__init__(
+            model,
+            training_data,
+            coef_init,
+            intercept_init,
+            test_data,
+            label_col,
+            user_id_col,
+        )
+
+        # TODO: maintain user contribution weights in the Clients.
+        # Maybe call a method to set and return the weights on each client, and
+        # accumulate them here in the weight sum.
+        # user_contrib_weight_sum = 0
+        # for client in self._clients:
+        #     user_contrib_weight_sum += client.update_contrib_weight(self._user_weight_cap)
+        # TODO initialize standard deviation
+
+    def run_simulation_round(self):
+        """Perform a single round of federated learning with DP."""
+        for client in self._clients:
+            if np.random.random_sample() < self._client_fraction:
+                client.update_and_submit_weights_dp(
+                    self._coefs[-1],
+                    self._intercepts[-1],
+                    self._num_epochs,
+                    self._batch_size,
+                    self._sensitivity,
+                )
+
+        new_coef, new_intercept = self._server.compute_new_weights_dp(
+            self._standard_dev, self._client_contrib_weight_sum
+        )
+
+        self._coefs.append(new_coef)
+        self._intercepts.append(new_intercept)
+
+        # Increment the round counter.
+        super().run_simulation_round()
+
+        return new_coef, new_intercept

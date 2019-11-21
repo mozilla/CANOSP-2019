@@ -29,6 +29,7 @@ class Client:
         self._labels = labels
         self._model = model
         self._n = len(labels)
+        self._contrib_weight = self._n
 
     def _get_batch_indices(self, batch_size):
         """Randomly split data into minibatches of target size `batch_size`.
@@ -67,12 +68,18 @@ class Client:
         # TODO: submit new weights to the server via API request.
         # self._model.get_weights() -> server
 
+    def update_contrib_weight(contrib_weight_cap):
+        """Set and return the contribution weight in terms of the given cap."""
+        # TODO apply the cap to self._n.
+        return self._contrib_weight
+
     def update_and_submit_weights_dp(
-        self, current_coef, current_intercept, num_epochs, batch_size
+        self, current_coef, current_intercept, num_epochs, batch_size, sensitivity
     ):
         """Update the current model weights for FL with DP using the client's data.
 
         Resulting weights are submitted to the server.
         """
-        # TODO
+        # TODO transmit self._contrib_weight in the place of self._n to the
+        # server
         pass
