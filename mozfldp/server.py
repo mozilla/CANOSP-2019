@@ -62,13 +62,8 @@ class ServerFacade:
         for index, (client_coef, client_intercept, n_k) in enumerate(
             zip(self._client_coefs, self._client_intercepts, self._num_samples)
         ):
-
-            added_coef = [
-                np.array(value) * (n_k) / total_samples for value in client_coef
-            ]
-            added_intercept = [
-                np.array(value) * (n_k) / total_samples for value in client_intercept
-            ]
+            added_coef = np.array(client_coef) * n_k / total_samples
+            added_intercept = np.array(client_intercept) * n_k / total_samples
 
             new_coefs = np.add(new_coefs, added_coef)
             new_intercept = np.add(new_intercept, added_intercept)
