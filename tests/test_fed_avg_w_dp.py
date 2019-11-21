@@ -218,6 +218,18 @@ def test_standard_dev():
     assert res == 7.5
 
 
+def test_batching_user_data():
+    batch_size = 2
+
+    user_features = [[1, 2], [3, 4], [5, 6], [7, 8]]
+    user_labels = [7, 8, 9, 10]
+
+    batched_feats, batched_labels = fed_avg_w_dp._break_user_update_data_into_batches(batch_size, 4, user_features, user_labels)
+
+    assert _lists_equal(batched_labels[0], [7, 8])
+    assert _lists_equal(batched_feats[0], [[1, 2], [3, 4]])
+
+
 #### Helper functions ####
 
 
