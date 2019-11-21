@@ -111,7 +111,7 @@ def handle_invalid_client_data(error):
     return response
 
 
-@app.route("/api/v1/ingest_client_data", methods=["POST"])
+@app.route("/api/v1/ingest_client_data/<string:client_id>", methods=["POST"])
 def ingest_client_data(client_id):
     payload = request.get_json()
     try:
