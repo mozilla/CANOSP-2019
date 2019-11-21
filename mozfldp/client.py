@@ -75,16 +75,10 @@ class Client:
                     self._features[batch_ind], self._labels[batch_ind]
                 )
 
-        # TODO: submit new weights to the server via API request.
-        # self._model.get_weights() -> server
-        weights = self._model.get_weights()
-        coefs = weights[0]
-        intercept = weights[1]
-
         # load the client weight into json payload
         client_data = {
-            "coefs": coefs.tolist() if coefs else None,
-            "intercept": intercept.tolist() if intercept else None,
+            "coefs": current_coef.tolist() if current_coef else None,
+            "intercept": current_intercept.tolist() if current_intercept else None,
             "num_samples": self._n
         }
 
