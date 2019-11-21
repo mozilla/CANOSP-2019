@@ -1,6 +1,8 @@
 from sklearn.linear_model import SGDClassifier
 import numpy as np
 import random
+import mozfldp.server as server
+import json
 
 
 def client_update(
@@ -56,13 +58,6 @@ def client_update(
     return weights
 
 
-def append(list, element):
-    """
-    helper function to append array into array in numpy
-    """
-    return np.concatenate((list, [element])) if list is not None else [element]
-
-
 def server_update(
     init_weight,
     client_fraction,
@@ -93,8 +88,8 @@ def server_update(
 
     """
     # initialize the weights
-    coef = list(init_weight[0])
-    intercept = list(init_weight[1])
+    coef = init_weight[0]
+    intercept = init_weight[1]
 
     # unique classes in the dataset
     all_classes = np.unique(labels)
@@ -107,6 +102,8 @@ def server_update(
     # reseed the rng each run
     random.seed(rand_seed)
 
+    serv = server.ServerFacade(coef, intercept)
+
     # use to generate n_k so that the sum of n_k equals to n
     for i in range(num_rounds):
         # calculate the number of clients used in this round
@@ -114,56 +111,35 @@ def server_update(
         # random set of m client's index
         user_ids = np.array(random.sample(range(client_num), m))
 
-        # print(user_ids)
-        num_samples = []
-
-        # grab all the weights from clients
-        client_coefs = None
-        client_intercepts = None
-
         for user_id in user_ids:
-            client_feature = features[user_id]
-            client_label = labels[user_id]
-
+            client_features = features[user_id]
+            num_samples = len(client_features)
+            client_labels = labels[user_id]
             coefs, intercept = client_update(
                 [coef, intercept],
                 epoch,
                 batch_size,
-                client_feature,
-                client_label,
+                client_features,
+                client_labels,
                 all_classes,
                 rand_seed,
             )
 
-            client_coefs = append(client_coefs, coefs)
+            # this will get moved to the end of Client.update_and_submit_weights
+            payload = {
+                "coefs": coefs.tolist(),
+                "intercept": intercept.tolist(),
+                "num_samples": num_samples,
+            }
+            serv.ingest_client_data(json.dumps(payload))
 
-            client_intercepts = append(client_intercepts, intercept)
+    coef, intercept = serv.compute_new_weights()
 
-            num_samples.append(len(client_feature))
+    # TODO: extract down to end of function so that we can construct
+    # a new SGD using new coef+intercept data.
 
-        # calculate the new server weights based on new weights coming from client
-        new_coefs = np.zeros(init_weight[0].shape, dtype=np.float64, order="C")
-        new_intercept = np.zeros(init_weight[1].shape, dtype=np.float64, order="C")
-
-        for index, user_id in enumerate(user_ids):
-            client_coef = client_coefs[index]
-            client_intercept = client_intercepts[index]
-
-            n_k = num_samples[index]
-            added_coef = [value * (n_k) / sum(num_samples) for value in client_coef]
-            added_intercept = [
-                value * (n_k) / sum(num_samples) for value in client_intercept
-            ]
-
-            new_coefs = np.add(new_coefs, added_coef)
-            new_intercept = np.add(new_intercept, added_intercept)
-
-        # update the server weights to newly calculated weights
-        coef = new_coefs
-        intercept = new_intercept
-
-        if display_weight_per_round:
-            print("Updated Weights: ", coef, intercept)
+    # Reconstruct a new classifier so that we can test the accuracy
+    # using new coef and intercept
 
     # load coefficients and intercept into the classifier
     clf = SGDClassifier(loss="log", random_state=rand_seed)

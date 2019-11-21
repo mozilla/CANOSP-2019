@@ -4,16 +4,11 @@
 
 from flask import Flask
 from flask import request
+from flask import current_app
+from flask import jsonify
+import numpy as np
 import argparse
-
-# TODO: this needs to manually copied in right now.
-
-# we should package up the canosp project as a pypi project so we can
-# just import it like any other module.
-
-from mozfldp.simulation_util import server_update  # noqa
-
-from sklearn.linear_model import SGDClassifier
+import json
 
 
 app = Flask(__name__)
@@ -24,74 +19,114 @@ class ServerFacade:
     This class acts as a facade around the functions in
     `simulation_util` to provide a consistent interface to load data
     into a classifier.
+
+    Args: 
+        coef: initial coefficients to initialize the server with
+        intercept: initial intercepts to initialize the server with
     """
 
-    def __init__(self):
-        self._classifier = SGDClassifier(loss="hinge", penalty="l2")
+    def __init__(self, coef, intercept):
+        self._coef = coef
+        self._intercept = intercept
 
-        self._buffer = {"some_client_uuid_1": [], "some_client_uuid_2": []}
+        self.reset_client_data()
+
+    def reset_client_data(self):
+        self._client_coefs = []
+        self._client_intercepts = []
+        self._num_samples = []
 
     def ingest_client_data(self, client_json):
-        # TODO: we need to read one sample of data from a client and
-        # add it to a sample buffer.  The intent here is that we want
-        # to collect enough data that we can safely sample from the
-        # buffer
-
-        # Assume that client_json is some JSON blob with everything we
-        # need to call client_update successfully.  We should have a
-        # `client_id` key that uniquely identifies the client so that
-        # we can pin data to a particular client.
-
-        # TODO: maybe something like this?
-        # self._buffer[client_json['client_id']].append(client_json)
-        pass
-
-    def update_classifier(self):
-        # TODO: this is where the magic happens
-        #
-        # I think roughly, this should be applying a sample of client
-        # data through a training loop.
-        #
-        # I believe you want to take the code from:
-        # https://github.com/mozilla/CANOSP-2019/blob/master/simulation_util.py#L98
-        # to
-        # https://github.com/mozilla/CANOSP-2019/blob/master/simulation_util.py#L149
-        # and update the parameters of the SGDClassifier.
-        #
-        # The samples `S` in simulation_util.py would be equivalent to self._buffer
-        # in this class
-        pass
-
-    def classify(self, some_input_json):
         """
-        Apply the classifer to some sample input
+        Accepts new weights from a client and stores them on the server side for averaging
+        
+        Args: 
+            client_json: a json object containing coefs, intercepts, and num_samples
         """
-        reshaped_X_test = None
-        reshaped_Y_test = None
-        score = self._classifier.score(reshaped_X_test, reshaped_Y_test)
-        return score
+        client_json = json.loads(client_json)
+        self._client_coefs.append(client_json["coefs"])
+        self._client_intercepts.append(client_json["intercept"])
+        self._num_samples.append(client_json["num_samples"])
+
+    def compute_new_weights(self):
+        """ 
+        Applies the federated averaging on the stored client weights for this round
+        and return the new weights
+        """
+
+        new_coefs = np.zeros(self._coef.shape, dtype=np.float64, order="C")
+        new_intercept = np.zeros(self._intercept.shape, dtype=np.float64, order="C")
+
+        total_samples = sum(self._num_samples)
+
+        for index, (client_coef, client_intercept, n_k) in enumerate(
+            zip(self._client_coefs, self._client_intercepts, self._num_samples)
+        ):
+
+            added_coef = [
+                np.array(value) * (n_k) / total_samples for value in client_coef
+            ]
+            added_intercept = [
+                np.array(value) * (n_k) / total_samples for value in client_intercept
+            ]
+
+            new_coefs = np.add(new_coefs, added_coef)
+            new_intercept = np.add(new_intercept, added_intercept)
+
+        # update the server weights to newly calculated weights
+        self._coef = new_coefs
+        self._intercept = new_intercept
+
+        # reset all client data so it doesn't get used for the next round
+        self.reset_client_data()
+
+        return self._coef, self._intercept
 
 
-server = ServerFacade()
+class InvalidClientData(Exception):
+    status_code = 500
 
-# TODO: you'll need to add server routes for `update_classifier` and
-# `classify` to allow them to be invoked over the web.
+    def __init__(self, message, status_code=None, payload=None):
+        Exception.__init__(self)
+        self.message = message
+        if status_code is not None:
+            self.status_code = status_code
+        self.payload = payload
+
+    def to_dict(self):
+        rv = dict(self.payload or ())
+        rv["message"] = self.message
+        return rv
 
 
-@app.route("/api/v1/client_update/<string:client_id>", methods=["POST"])
-def client_update(client_id):
+@app.errorhandler(InvalidClientData)
+def handle_invalid_client_data(error):
+    response = jsonify(error.to_dict())
+    response.status_code = error.status_code
+    return response
+
+
+@app.route("/api/v1/ingest_client_data", methods=["POST"])
+def ingest_client_data(client_id):
     payload = request.get_json()
+    try:
+        current_app.facade.ingest_client_data(payload)
+        return {"result": "ok"}
+    except Exception as exc:
+        raise InvalidClientData(
+            "Error updating client", payload={"exception": str(exc)}
+        )
 
-    # This is some debugging information so you can see how data gets
-    # ingested at the server.
-    msg = "Client ID: [{}].\nJSON Payload: {}".format(client_id, str(payload))
-    print(msg)
 
-    server.ingest_client_data(payload)
-
-    # TODO: you probably want to send some kind of useful feedback to
-    # clients that the data was ingested by the server
-    return {"result": "ok", "message": msg}
+@app.route("/api/v1/compute_new_weights", methods=["POST"])
+def compute_new_weights():
+    try:
+        weights = current_app.facade.compute_new_weights()
+        return {"result": "ok", "weights": weights}
+    except Exception as exc:
+        raise InvalidClientData(
+            "Error computing weights", payload={"exception": str(exc)}
+        )
 
 
 def flaskrun(app, default_host="0.0.0.0", default_port="8000"):
@@ -130,6 +165,13 @@ def flaskrun(app, default_host="0.0.0.0", default_port="8000"):
         app.config["PROFILE"] = True
         app.wsgi_app = ProfilerMiddleware(app.wsgi_app, restrictions=[30])
         args.debug = True
+
+    NUM_LABELS = 10
+    NUM_FEATURES = 784
+    coef = np.zeros((NUM_LABELS, NUM_FEATURES), dtype=np.float64, order="C")
+    intercept = np.zeros(NUM_LABELS, dtype=np.float64, order="C")
+
+    current_app.facade = ServerFacade(coef, intercept)
 
     app.run(debug=args.debug, host=args.host, port=int(args.port))
 
