@@ -3,9 +3,9 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from mozfldp.client import Client
+from mozfldp.server import ServerFacade
 
-# TODO: how should this be invoked?
-from mozfldp.server import start_server
+import json
 
 import numpy as np
 
@@ -70,9 +70,7 @@ class BaseSimulationRunner:
             test_data, label_col, user_id_col
         )
 
-        # Initialize the server.
-        # TODO: how should this be handled?
-        self._server = start_server()
+        self._server = ServerFacade(coef_init, intercept_init)
 
     def run_simulation_round(self):
         """Perform a single round of model training.
@@ -113,6 +111,7 @@ class FLSimulationRunner(BaseSimulationRunner):
                     self._num_epochs,
                     self._batch_size,
                 )
+                self._submit_client_weights_temp_hack(client)
 
         new_coef, new_intercept = self._server.compute_new_weights()
         self._coefs.append(new_coef)
@@ -122,6 +121,17 @@ class FLSimulationRunner(BaseSimulationRunner):
         super().run_simulation_round()
 
         return new_coef, new_intercept
+
+    def _submit_client_weights_temp_hack(self, client):
+        """Temporary shim to submit client weights to the server."""
+        coef, intercept = client._model.get_weights()
+        request_dict = {
+            "coefs": coef.tolist(),
+            "intercept": intercept.tolist(),
+            "num_samples": client._n,
+        }
+        request_json = json.dumps(request_dict)
+        self._server.ingest_client_data(request_json)
 
 
 class FLDPSimulationRunner(BaseSimulationRunner):
