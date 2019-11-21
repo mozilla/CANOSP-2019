@@ -142,9 +142,9 @@ def user_update_fed_avg(prms, round_user_features, round_user_labels, theta_0):
     """
     Calculates an update to theta (coefs, intercepts) based on data sampled from a single user.
     Does not update theta directly.
-    These updates from individual users are then merged into a single update before performing updating theta.
+    These updates from individual users are then merged into a single update before updating theta.
 
-    round_user_features/labels: The data from the user that are using to calculate the update.
+    round_user_features/labels: The data from the user that we are using to calculate the update.
     theta_0: The current weights of theta from the previous round.
     Note that other user updates before this update do not affect theta_0!
     """
