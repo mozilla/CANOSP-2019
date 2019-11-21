@@ -149,21 +149,17 @@ def user_update_fed_avg(prms, round_user_features, round_user_labels, theta_0):
     Note that other user updates before this update do not affect theta_0!
     """
 
-    batches_features = []
-    batches_labels = []
-
     classifier = SGDClassifier(
         loss="hinge", penalty="l2", max_iter=1, random_state=prms.rand_seed
     )
 
-    round_num_entries = len(round_user_features)
-    num_batches = int(np.ceil(round_num_entries / prms.batch_size))
     theta = np.array(theta_0, copy=True)
 
-    # Split the round data into seperate batches
-    for i in range(0, round_num_entries, prms.batch_size):
-        batches_features.append(round_user_features[i : i + prms.batch_size])
-        batches_labels.append(round_user_labels[i : i + prms.batch_size])
+    round_num_entries = len(round_user_features)
+    num_batches = int(np.ceil(round_num_entries / prms.batch_size))
+    batches_features, batches_labels = _break_user_update_data_into_batches(
+        prms.batch_size, round_num_entries, round_user_features, round_user_labels
+    )
 
     # Train with the batches
     for _ in range(prms.num_epochs):
@@ -184,6 +180,20 @@ def user_update_fed_avg(prms, round_user_features, round_user_labels, theta_0):
             theta = theta_0 + flat_clip(prms.sensitivity, theta - theta_0)
 
     return theta - theta_0
+
+
+def _break_user_update_data_into_batches(
+    batch_size, round_num_entries, round_user_features, round_user_labels
+):
+    batches_features = []
+    batches_labels = []
+
+    # Split the round data into seperate batches
+    for i in range(0, round_num_entries, batch_size):
+        batches_features.append(round_user_features[i : i + batch_size])
+        batches_labels.append(round_user_labels[i : i + batch_size])
+
+    return batches_features, batches_labels
 
 
 def _get_random_selection_of_user_idxs(num_users, user_sel_prob):
