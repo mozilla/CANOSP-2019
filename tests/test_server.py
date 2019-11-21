@@ -89,4 +89,3 @@ def test_compute_new_weights(server, coef, intercept):
 
     np.testing.assert_array_equal(new_coef, expected_coef)
     np.testing.assert_array_equal(new_intercept, expected_intercept)
-

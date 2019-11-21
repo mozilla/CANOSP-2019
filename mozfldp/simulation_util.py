@@ -4,6 +4,7 @@ import random
 import mozfldp.server as server
 import json
 
+
 def client_update(
     init_weights, epochs, batch_size, features, labels, all_classes, rand_seed
 ):
@@ -29,8 +30,8 @@ def client_update(
     batches_labels = []
 
     for i in range(0, len(features), batch_size):
-        batches_features.append(features[i: i + batch_size])
-        batches_labels.append(labels[i: i + batch_size])
+        batches_features.append(features[i : i + batch_size])
+        batches_labels.append(labels[i : i + batch_size])
 
     coef = list(init_weights[0])
     intercept = list(init_weights[1])
@@ -102,7 +103,7 @@ def server_update(
     random.seed(rand_seed)
 
     serv = server.ServerFacade(coef, intercept)
-    
+
     # use to generate n_k so that the sum of n_k equals to n
     for i in range(num_rounds):
         # calculate the number of clients used in this round
@@ -128,8 +129,8 @@ def server_update(
             payload = {
                 "coefs": coefs.tolist(),
                 "intercept": intercept.tolist(),
-                "num_samples": num_samples
-            };
+                "num_samples": num_samples,
+            }
             serv.ingest_client_data(json.dumps(payload))
 
     coef, intercept = serv.compute_new_weights()

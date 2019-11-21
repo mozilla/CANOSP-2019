@@ -30,7 +30,7 @@ class ServerFacade:
         self._intercept = intercept
 
         self.reset_client_data()
-    
+
     def reset_client_data(self):
         self._client_coefs = []
         self._client_intercepts = []
@@ -64,12 +64,10 @@ class ServerFacade:
         ):
 
             added_coef = [
-                np.array(value) * (n_k) / total_samples
-                for value in client_coef
+                np.array(value) * (n_k) / total_samples for value in client_coef
             ]
             added_intercept = [
-                np.array(value) * (n_k) / total_samples
-                for value in client_intercept
+                np.array(value) * (n_k) / total_samples for value in client_intercept
             ]
 
             new_coefs = np.add(new_coefs, added_coef)
