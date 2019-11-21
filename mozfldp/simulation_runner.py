@@ -80,6 +80,66 @@ class BaseSimulationRunner:
         self._num_rounds_completed += 1
 
 
+class SGDSimulationRunner(BaseSimulationRunner):
+    """Simulation runner for standard (non-federated) minibatch SGD.
+
+    In addition to model, data and initial weights as required by
+    `BaseSimulationRunner`, supply:
+
+    num_epochs: number of passes through the dataset on each round.
+    batch_size: target size of minibatches. Weights are updated once per minibatch in a given round.
+    """
+
+    def __init__(
+        self,
+        num_epochs,
+        batch_size,
+        model,
+        training_data,
+        coef_init,
+        intercept_init,
+        test_data=None,
+        label_col="label",
+        user_id_col="user_id",
+    ):
+        self._num_epochs = num_epochs
+        self._batch_size = batch_size
+
+        # Implement as a single client with all the data.
+        training_data[user_id_col] = "sgd"
+        if test_data is not None:
+            test_data[user_id_col] = "sgd"
+
+        super().__init__(
+            model,
+            training_data,
+            coef_init,
+            intercept_init,
+            test_data,
+            label_col,
+            user_id_col,
+        )
+
+        assert len(self._clients) == 1
+        self._dummy_client = self._clients[0]
+
+    def run_simulation_round(self):
+        """Perform a single round of federated learning."""
+        # TODO finish implementing this
+        self._dummy_client.update_and_submit_weights(
+            self._coefs[-1], self._intercepts[-1], self._num_epochs, self._batch_size
+        )
+
+        new_coef, new_intercept = self._dummy_client.get_current_weights()
+        self._coefs.append(new_coef)
+        self._intercepts.append(new_intercept)
+
+        # Increment the round counter.
+        super().run_simulation_round()
+
+        return new_coef, new_intercept
+
+
 class FLSimulationRunner(BaseSimulationRunner):
     """Simulation runner for standard federated learning.
 
