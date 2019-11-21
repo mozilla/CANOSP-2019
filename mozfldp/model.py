@@ -78,7 +78,7 @@ class SGDModel:
             getattr(self.classifier, "intercept_", None),
         )
 
-    def minibatch_update(self, X, y):
+    def minibatch_update(self, X, y, labels):
         """Run a single weight update on the given minibatch.
 
         X and y should be arrays of the appropriate dimensions as required by
@@ -94,6 +94,8 @@ class SGDModel:
         mini_batch_intercept = np.zeros(
             init_intercept.shape, dtype=np.float64, order="C"
         )
+
+        self.set_training_classes(np.array(labels))
 
         for i in range(len(X)):
             self.classifier.partial_fit(X[i : (i + 1)], y[i : (i + 1)])

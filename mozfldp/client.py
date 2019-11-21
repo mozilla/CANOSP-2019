@@ -52,7 +52,7 @@ class Client:
 
     def _run_model_update_step(self, X, y):
         """Run a single GD update step on the given data minibatch."""
-        self._model.minibatch_update(X, y)
+        self._model.minibatch_update(X, y, self._labels)
 
     def update_and_submit_weights(
         self, current_coef, current_intercept, num_epochs, batch_size
@@ -82,14 +82,17 @@ class Client:
         intercept = weights[1]
 
         # load the client weight into json payload
-        client_data = {}
-        client_data["coefs"] = coefs
-        client_data["intercept"] = intercept
+        client_data = {
+            "coefs": coefs.tolist(),
+            "intercept": intercept.tolist(),
+            "num_samples": self._n
+        }
+
         payload = json.dumps(client_data)
 
-        # send the post request
+        # send the post request to update the weights
         api_endpoint = "http://0.0.0.0:8000/api/v1/client_update/{}".format(self._id)
-        r = requests.post(url=api_endpoint, data=payload)
+        requests.post(url=api_endpoint, data=payload)
 
     def update_contrib_weight(contrib_weight_cap):
         """Set and return the contribution weight in terms of the given cap."""
