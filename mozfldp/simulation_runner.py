@@ -58,7 +58,10 @@ class BaseSimulationRunner:
 
         # Initialize the clients with their respective datasets.
         self._clients = []
-        by_user_data = training_data.groupby("user_id")
+        if user_id_col is not None and user_id_col in training_data:
+            by_user_data = training_data.groupby(user_id_col)
+        else:
+            by_user_data = [(None, training_data)]
         for user_id, user_data in by_user_data:
             feats, labs = _format_data_for_model(user_data, label_col, user_id_col)
             self._clients.append(
@@ -106,18 +109,14 @@ class SGDSimulationRunner(BaseSimulationRunner):
         self._batch_size = batch_size
 
         # Implement as a single client with all the data.
-        training_data[user_id_col] = "sgd"
-        if test_data is not None:
-            test_data[user_id_col] = "sgd"
-
         super().__init__(
             model,
-            training_data,
+            training_data.drop(columns=user_id_col),
             coef_init,
             intercept_init,
             test_data,
             label_col,
-            user_id_col,
+            None,
         )
 
         assert len(self._clients) == 1
