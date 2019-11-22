@@ -66,10 +66,7 @@ If you are running native locally -the port will be 8000.  Port 8090
 is used if you are running in a docker container.
 
 ```
-curl -d '{"key1":"value1", "key2":"value2"}' \
-   -H "Content-Type: application/json" \
-   -X POST http://127.0.0.1:8090/api/v1/client_update/some_client_id
+curl -X POST http://127.0.0.1:8000/api/v1/compute_new_weights
 
-Client ID: [some_client_id].
-JSON Payload: {'key1': 'value1', 'key2': 'value2'}%
+{"result":"ok","weights":[[[0.0,0.0,0.0,.... }
 ```
