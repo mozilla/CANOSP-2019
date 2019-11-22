@@ -46,8 +46,10 @@ class SGDModel:
         else:
             new_classifier = clone(self.classifier)
             # If class labels have been specified, maintain these.
-            if getattr(self.classifier, "classes_", None):
+            try:
                 new_classifier.classes_ = self.classifier.classes_
+            except AttributeError:
+                pass
 
         new_model = self.__class__()
         new_model.classifier = new_classifier
