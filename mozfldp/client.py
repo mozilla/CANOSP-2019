@@ -77,8 +77,8 @@ class Client:
 
         # load the client weight into json payload
         client_data = {
-            "coefs": current_coef.tolist() if current_coef else None,
-            "intercept": current_intercept.tolist() if current_intercept else None,
+            "coefs": current_coef.tolist(),
+            "intercept": current_intercept.tolist(),
             "num_samples": self._n
         }
 
@@ -86,7 +86,9 @@ class Client:
 
         # send the post request to update the weights
         api_endpoint = "http://0.0.0.0:8000/api/v1/ingest_client_data/{}".format(self._id)
-        requests.post(url=api_endpoint, json=payload)
+        response = requests.post(url=api_endpoint, json=payload)
+
+        return response
 
     def update_contrib_weight(contrib_weight_cap):
         """Set and return the contribution weight in terms of the given cap."""
