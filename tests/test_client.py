@@ -87,6 +87,7 @@ def test_batching(client, batched_indices_2, batched_indices_3):
     batch_ind = [np.ravel(batched_indices_2)]
     compare_batch_indices(batches_size_exceed, batch_ind)
 
+
 def test_update_weights(client, monkeypatch, batched_indices_2):
     # TODO: check weights and iteration counters t_, n_iter_ for correctness.
 
@@ -98,14 +99,17 @@ def test_update_weights(client, monkeypatch, batched_indices_2):
 
     monkeypatch.setattr(client, "_run_model_update_step", mock_model_update)
 
-    # mock the post request 
-    mock_post_patcher = patch('mozfldp.client.requests.post')
+    # mock the post request
+    mock_post_patcher = patch("mozfldp.client.requests.post")
     mock_post = mock_post_patcher.start()
     mock_post.return_value.ok = True
 
     reset_random_seed()
     client.update_and_submit_weights(
-        current_coef=np.array([]), current_intercept=np.array([]), num_epochs=1, batch_size=2
+        current_coef=np.array([]),
+        current_intercept=np.array([]),
+        num_epochs=1,
+        batch_size=2,
     )
     assert len(model_update_data) == len(batched_indices_2)
     for (feat, lab), exp_ind in zip(model_update_data, batched_indices_2):
@@ -115,7 +119,10 @@ def test_update_weights(client, monkeypatch, batched_indices_2):
     reset_random_seed()
     model_update_data = []
     client.update_and_submit_weights(
-        current_coef=np.array([]), current_intercept=np.array([]), num_epochs=3, batch_size=2
+        current_coef=np.array([]),
+        current_intercept=np.array([]),
+        num_epochs=3,
+        batch_size=2,
     )
     batched_ind = batched_indices_2 * 3
     print(batched_ind)
@@ -123,18 +130,20 @@ def test_update_weights(client, monkeypatch, batched_indices_2):
     for (feat, lab), exp_ind in zip(model_update_data, batched_ind):
         assert np.array_equal(feat, client._features[exp_ind])
         assert np.array_equal(lab, client._labels[exp_ind])
-    
+
     reset_random_seed()
     model_update_data = []
-    coefs = np.array([29., 0., 0.])
-    intercepts = np.array([-9.])
+    coefs = np.array([29.0, 0.0, 0.0])
+    intercepts = np.array([-9.0])
     expected_payload = {
         "coefs": coefs.tolist(),
         "intercept": intercepts.tolist(),
         "num_samples": len(LABELS),
     }
     expected_clientId = None
-    expected_url = "http://0.0.0.0:8000/api/v1/ingest_client_data/{}".format(expected_clientId)
+    expected_url = "http://0.0.0.0:8000/api/v1/ingest_client_data/{}".format(
+        expected_clientId
+    )
     response = client.update_and_submit_weights(
         current_coef=coefs, current_intercept=intercepts, num_epochs=3, batch_size=2
     )
@@ -147,6 +156,7 @@ def test_update_weights(client, monkeypatch, batched_indices_2):
     assert response.ok == True
     # stop mocking the request
     mock_post_patcher.stop()
+
 
 def test_update_weights_dp():
     pass
