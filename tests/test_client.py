@@ -135,14 +135,16 @@ def test_update_weights(client, monkeypatch, batched_indices_2):
     }
     expected_clientId = None
     expected_url = "http://0.0.0.0:8000/api/v1/ingest_client_data/{}".format(expected_clientId)
-    client.update_and_submit_weights(
+    response = client.update_and_submit_weights(
         current_coef=coefs, current_intercept=intercepts, num_epochs=3, batch_size=2
     )
     batched_ind = batched_indices_2 * 3
     print(batched_ind)
     assert len(model_update_data) == len(batched_ind)
     mock_post.assert_called_with(json=json.dumps(expected_payload), url=expected_url)
-    
+    # test if the endpoint is called successfully
+    assert response != None
+    assert response.ok == True
     # stop mocking the request
     mock_post_patcher.stop()
 
