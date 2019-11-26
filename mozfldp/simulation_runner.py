@@ -6,8 +6,13 @@ from mozfldp.client import Client
 from mozfldp.server import ServerFacade
 
 import json
+import sys
+
+# Flag to drop dependencies on the rest of TensorFlow.
+sys.skip_tf_privacy_import = True
 
 import numpy as np
+from tensorflow_privacy.privacy.analysis import rdp_accountant
 
 
 def _format_data_for_model(dataset, label_col, user_id_col):
@@ -134,7 +139,7 @@ class SGDSimulationRunner(BaseSimulationRunner):
         self._intercepts.append(new_intercept)
 
         # Increment the round counter.
-        super().run_simulation_round()
+        self._num_rounds_completed += 1
 
         return new_coef, new_intercept
 
@@ -197,7 +202,7 @@ class FLSimulationRunner(BaseSimulationRunner):
         self._intercepts.append(new_intercept)
 
         # Increment the round counter.
-        super().run_simulation_round()
+        self._num_rounds_completed += 1
 
         return new_coef, new_intercept
 
@@ -229,7 +234,14 @@ class FLDPSimulationRunner(BaseSimulationRunner):
         spent on each round.
     user_weight_cap: limit on the influence of a single user in the federated
         averaging
+    delta: the target value for the privacy parameter delta
     """
+
+    # Order at which to calculate RDP
+    # (drawn from examples in TensorFlow Privacy).
+    RDP_ORDERS = (
+        [1 + x / 10.0 for x in range(1, 100)] + list(range(11, 65)) + [128, 256, 512]
+    )
 
     def __init__(
         self,
@@ -239,6 +251,7 @@ class FLDPSimulationRunner(BaseSimulationRunner):
         sensitivity,
         noise_scale,
         user_weight_cap,
+        delta,
         model,
         training_data,
         coef_init,
@@ -253,6 +266,19 @@ class FLDPSimulationRunner(BaseSimulationRunner):
         self._sensitivity = sensitivity
         self._noise_scale = noise_scale
         self._user_weight_cap = user_weight_cap
+        self._delta = delta
+
+        # Privacy cost (RDP) can be precomputed.
+        self._rdp = rdp_accountant.compute_rdp(
+            q=self._client_fraction,
+            noise_multiplier=self._noise_scale,
+            steps=1,
+            orders=self.RDP_ORDERS,
+        )
+
+        # Store the progressive epsilon values (privacy budget used).
+        # Start from an initial value of 0 to align with the coefficient arrays.
+        self._eps = [0]
 
         super().__init__(
             model,
@@ -272,8 +298,20 @@ class FLDPSimulationRunner(BaseSimulationRunner):
         #     user_contrib_weight_sum += client.update_contrib_weight(self._user_weight_cap)
         # TODO initialize standard deviation
 
+    def _compute_privacy_budget_spent(self):
+        """Compute the epsilon value representing the privacy budget spent up to now."""
+        current_rdp = self._rdp * self._num_rounds_completed
+        eps, _, _ = rdp_accountant.get_privacy_spent(
+            orders=self.RDP_ORDERS, rdp=current_rdp, target_delta=self._delta
+        )
+        return eps
+
     def run_simulation_round(self):
-        """Perform a single round of federated learning with DP."""
+        """Perform a single round of federated learning with DP.
+
+        Returns latest coefficient matrix, intercept vector, and spent privacy budget
+        epsilon.
+        """
         for client in self._clients:
             if np.random.random_sample() < self._client_fraction:
                 client.update_and_submit_weights_dp(
@@ -292,6 +330,10 @@ class FLDPSimulationRunner(BaseSimulationRunner):
         self._intercepts.append(new_intercept)
 
         # Increment the round counter.
-        super().run_simulation_round()
+        self._num_rounds_completed += 1
 
-        return new_coef, new_intercept
+        # Compute the privacy budget consumed up until this point.
+        new_eps = self._compute_privacy_budget_spent()
+        self._eps.append(new_eps)
+
+        return new_coef, new_intercept, new_eps
