@@ -31,9 +31,13 @@ class Client:
         self._n = len(labels)
         self._contrib_weight = self._n
 
-    def get_current_weights(self):
+    def get_current_weights(self, copy=True):
         """Return the current weights set in the Client's model as (coef, intercept)."""
-        return self._model.get_weights()
+        coef, intercept = self._model.get_weights()
+        if copy:
+            coef = np.copy(coef)
+            intercept = np.copy(intercept)
+        return coef, intercept
 
     def _get_batch_indices(self, batch_size):
         """Randomly split data into minibatches of target size `batch_size`.
@@ -60,7 +64,7 @@ class Client:
 
         Resulting weights are submitted to the server.
         """
-        self._model.set_weights(current_coef, current_intercept)
+        self._model.set_weights(np.copy(current_coef), np.copy(current_intercept))
 
         batch_ind_list = self._get_batch_indices(batch_size)
         for epoch in range(num_epochs):
