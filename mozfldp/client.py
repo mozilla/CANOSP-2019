@@ -6,6 +6,11 @@ import numpy as np
 import requests
 import json
 
+from decouple import config
+
+HOSTNAME = config("FLDP_HOST", "127.0.0.1")
+PORT = config("FLDP_PORT", 8000)
+
 
 class Client:
     """A client which trains model updates on its personal dataset for FL.
@@ -79,13 +84,15 @@ class Client:
         client_data = {
             "coefs": current_coef.tolist(),
             "intercept": current_intercept.tolist(),
-            "num_samples": self._n
+            "num_samples": self._n,
         }
 
         payload = json.dumps(client_data)
 
         # send the post request to update the weights
-        api_endpoint = "http://0.0.0.0:8000/api/v1/ingest_client_data/{}".format(self._id)
+        api_endpoint = "http://{hostname:s}:{port:d}/api/v1/ingest_client_data/{id:d}".format(
+            hostname=HOSTNAME, port=PORT, id=self._id
+        )
         response = requests.post(url=api_endpoint, json=payload)
 
         return response
