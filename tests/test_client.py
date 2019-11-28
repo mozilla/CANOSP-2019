@@ -12,6 +12,12 @@ from mozfldp.model import SGDModel
 import random
 import json
 
+from decouple import config
+
+HOSTNAME = config("FLDP_HOST", "127.0.0.1")
+PORT = config("FLDP_PORT", 8000)
+fake_clientId = 1
+
 FEATURES = [
     [6, 9, 6],
     [9, 2, 8],
@@ -46,7 +52,9 @@ def model():
 
 @pytest.fixture
 def client(features, labels, model):
-    return Client(client_id=None, features=features, labels=labels, model=model)
+    return Client(
+        client_id=fake_clientId, features=features, labels=labels, model=model
+    )
 
 
 @pytest.fixture
@@ -140,9 +148,9 @@ def test_update_weights(client, monkeypatch, batched_indices_2):
         "intercept": intercepts.tolist(),
         "num_samples": len(LABELS),
     }
-    expected_clientId = None
-    expected_url = "http://0.0.0.0:8000/api/v1/ingest_client_data/{}".format(
-        expected_clientId
+
+    expected_url = "http://{hostname:s}:{port:d}/api/v1/ingest_client_data/{id:d}".format(
+        hostname=HOSTNAME, port=PORT, id=client._id
     )
     response = client.update_and_submit_weights(
         current_coef=coefs, current_intercept=intercepts, num_epochs=3, batch_size=2
