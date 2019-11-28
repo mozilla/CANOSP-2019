@@ -95,8 +95,6 @@ class SGDModel:
             init_intercept.shape, dtype=np.float64, order="C"
         )
 
-        self.set_training_classes(np.array(labels))
-
         for i in range(len(X)):
             self.classifier.partial_fit(X[i : (i + 1)], y[i : (i + 1)])
 
