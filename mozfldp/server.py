@@ -21,7 +21,7 @@ class ServerFacade:
 
     Args:
         coef: initial coefficients to initialize the server with
-        intercept: initial intercepts to initialize the server with
+        inomtercept: initial intercepts to initialize the server with
     """
 
     def __init__(self, coef, intercept):
@@ -76,7 +76,7 @@ class ServerFacade:
 
         return self._coef, self._intercept
 
-    def compute_new_weights_dp(self, standard_dev, avg_denom):
+    def compute_new_weights_dp(self, standard_dev, avg_denom, indiv_client_weights, user_sel_prob):
         """
         Applies the DP-protected federated averaging on the stored client weights
         for this round and return the new weights.
@@ -85,7 +85,61 @@ class ServerFacade:
         avg_denom: the denominator to use in computing the average
         """
         # TODO: DP version of fed averaging.
-        pass
+
+        coefs, inters = self._merge_all_user_thetas(avg_denom, indiv_client_weights, user_sel_prob)
+
+        coefs += self._gen_gausian_rand_noise(standard_dev, len(self._client_coefs))
+        inters += self._gen_gausian_rand_noise(standard_dev, len(self._client_intercepts))
+
+        self._client_coefs += coefs
+        self._client_intercepts += inters
+
+        self.reset_client_data()
+
+        return self._client_coefs, self._client_intercepts
+
+
+    def _gen_gausian_rand_noise(standard_dev, vec_len):
+        """
+        Generates gausian noise and applies to all elements in a vector.
+
+        stndrd_dev: The standard deviation of the distrubution to sample from
+        vec_len: The number of elements in the vector
+
+        returns: The vector after noise has been applied
+        """
+
+        return np.random.normal(loc=0.0, scale=stndrd_dev, size=vec_len)
+
+    def _merge_all_user_thetas(self, weight_sum, user_weights, user_sel_prob):
+        """
+        Merge all user updates for a round into a single delta (vector).
+
+        user_sel_prob: Probability of any given user being selected for a round
+        weight_sum: The sum of all user weights
+        user_updates_buf: The user updates (thetas) that we are merging.
+        user_weights: The weights applied to each user. Users with more data have more weight.
+        num_theta_elems: The number of elements in theta.
+        """
+
+        num_users_in_batch = len(self._client_coefs)
+        merged_coefs = np.zeros(num_users_in_batch, dtype=np.float64, order="C")
+        merged_inters = np.zeros(num_users_in_batch, dtype=np.float64, order="C")
+
+        for i in range(num_users_in_batch):
+            weighted_user_coefs = np.multiply(self._client_coefs[i], user_weights[i])
+            weighted_user_inters = np.multiply(self._client_intercepts[i], user_weights[i])
+
+            merged_coefs = np.add(merged_coefs, weighted_user_coefs)
+            merged_inters = np.add(merged_inters, weighted_user_inters)
+
+        divisor = user_sel_prob * weight_sum
+        merged_coefs = np.divide(merged_coefs, divisor)
+        merged_inters = np.divide(merged_inters, divisor)
+
+        return merged_coefs, merged_inters
+
+
 
 
 class InvalidClientData(Exception):
