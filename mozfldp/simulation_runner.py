@@ -290,6 +290,8 @@ class FLDPSimulationRunner(BaseSimulationRunner):
             user_id_col,
         )
 
+
+
         # TODO: maintain user contribution weights in the Clients.
         # Maybe call a method to set and return the weights on each client, and
         # accumulate them here in the weight sum.
@@ -312,6 +314,12 @@ class FLDPSimulationRunner(BaseSimulationRunner):
         Returns latest coefficient matrix, intercept vector, and spent privacy budget
         epsilon.
         """
+
+        self._client_contrib_weight_sum = 0
+
+        # _server.compute_new_weights_dp needs this, but I don't think it's a good idea to send through the json
+        indiv_client_weights = []
+
         for client in self._clients:
             if np.random.random_sample() < self._client_fraction:
                 client.update_and_submit_weights_dp(
@@ -319,11 +327,17 @@ class FLDPSimulationRunner(BaseSimulationRunner):
                     self._intercepts[-1],
                     self._num_epochs,
                     self._batch_size,
-                    self._sensitivity,
+                    self._sensitivity
                 )
 
+                client_weight = client.update_contrib_weight(self._user_weight_cap)
+                indiv_client_weights.append(client_weight)
+                self._client_contrib_weight_sum += client_weight
+
+        self.standard_dev = self._calc_standard_dev(self.noise_scale, self.sensitivity, self.user_sel_prob, self._client_contrib_weight_sum)
+
         new_coef, new_intercept = self._server.compute_new_weights_dp(
-            self._standard_dev, self._client_contrib_weight_sum
+            self._standard_dev, self._client_contrib_weight_sum, indiv_client_weights
         )
 
         self._coefs.append(new_coef)
@@ -337,3 +351,10 @@ class FLDPSimulationRunner(BaseSimulationRunner):
         self._eps.append(new_eps)
 
         return new_coef, new_intercept, new_eps
+
+    def _calc_standard_dev(self, noise_scale, sensitivity, usr_sel_prob, weight_sum):
+        """
+        Calculates the standard deviation
+        Parameters are tailored to this sim impl
+        """
+        return (self.noise_scale * self.sensitivity) / (usr_sel_prob * weight_sum)
