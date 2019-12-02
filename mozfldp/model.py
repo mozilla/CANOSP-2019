@@ -78,7 +78,7 @@ class SGDModel:
             getattr(self.classifier, "intercept_", None),
         )
 
-    def minibatch_update(self, X, y, labels):
+    def minibatch_update(self, X, y):
         """Run a single weight update on the given minibatch.
 
         X and y should be arrays of the appropriate dimensions as required by

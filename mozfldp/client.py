@@ -57,7 +57,7 @@ class Client:
 
     def _run_model_update_step(self, X, y):
         """Run a single GD update step on the given data minibatch."""
-        self._model.minibatch_update(X, y, self._labels)
+        self._model.minibatch_update(X, y)
 
     def update_and_submit_weights(
         self, current_coef, current_intercept, num_epochs, batch_size
