@@ -10,7 +10,10 @@ from decouple import config
 
 HOSTNAME = config("FLDP_HOST", default="127.0.0.1")
 PORT = config("FLDP_PORT", default=8000)
-API_ENDPOINT_BASE = "http://{hostname:s}:{port:d}/api/v1/ingest_client_data/{{id:s}}".format(hostname=HOSTNAME, port=PORT)
+API_ENDPOINT_BASE = "http://{hostname:s}:{port:d}/api/v1/ingest_client_data/{{id:s}}".format(
+    hostname=HOSTNAME, port=PORT
+)
+
 
 class Client:
     """A client which trains model updates on its personal dataset for FL.
