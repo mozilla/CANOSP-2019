@@ -4,7 +4,6 @@
 
 import pytest
 import numpy as np
-from unittest.mock import Mock, patch
 
 from mozfldp.client import Client
 from mozfldp.model import SGDModel
@@ -34,6 +33,7 @@ LABELS = [1, 0, 1, 0, 1, 0, 1, 0]
 SEEDED_BATCHED_2 = [[1, 5], [0, 7], [2, 4], [3, 6]]
 SEEDED_BATCHED_3 = [[1, 5, 0], [7, 2, 4], [3, 6]]
 
+
 @pytest.fixture
 def features():
     return np.array(FEATURES)
@@ -42,6 +42,7 @@ def features():
 @pytest.fixture
 def labels():
     return np.array(LABELS)
+
 
 @pytest.fixture
 def model(labels):
@@ -54,15 +55,16 @@ def model(labels):
 @pytest.fixture
 def client(features, labels, model):
     return Client(
-        client_id=CLIENT_ID, features=features, labels=labels,
-        model=model.get_clone()
+        client_id=CLIENT_ID, features=features, labels=labels, model=model.get_clone()
     )
 
 
 @pytest.fixture
 def api_url():
     return "http://{hostname}:{port}/api/v1/ingest_client_data/{id}".format(
-            hostname=HOSTNAME, port=str(PORT), id=str(CLIENT_ID))
+        hostname=HOSTNAME, port=str(PORT), id=str(CLIENT_ID)
+    )
+
 
 @pytest.fixture
 def batched_indices_2():
@@ -87,6 +89,7 @@ def batched_epoch_weights(client, batch_ind, num_epochs, init_coef, init_int):
 def reset_random_seed():
     random.seed(42)
     np.random.seed(42)
+
 
 def compare_batch_indices(actual, expected):
     assert len(actual) == len(expected)
@@ -129,7 +132,7 @@ def test_update_weights(client, batched_indices_2, api_url, monkeypatch):
         batch_ind=batched_indices_2,
         num_epochs=1,
         init_coef=init_coefs,
-        init_int=init_intercept
+        init_int=init_intercept,
     )
 
     reset_random_seed()
@@ -152,7 +155,7 @@ def test_update_weights(client, batched_indices_2, api_url, monkeypatch):
         batch_ind=batched_indices_2,
         num_epochs=3,
         init_coef=init_coefs,
-        init_int=init_intercept
+        init_int=init_intercept,
     )
 
     reset_random_seed()
@@ -168,7 +171,6 @@ def test_update_weights(client, batched_indices_2, api_url, monkeypatch):
     assert request_data["num_samples"] == len(LABELS)
     assert np.array_equal(request_data["coefs"], expected_coefs)
     assert np.array_equal(request_data["intercept"], expected_int)
-
 
 
 def test_update_weights_dp():
