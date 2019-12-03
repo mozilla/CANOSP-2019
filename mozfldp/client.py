@@ -14,10 +14,6 @@ API_ENDPOINT_BASE = "http://{hostname:s}:{port:d}/api/v1/ingest_client_data/{{id
     hostname=HOSTNAME, port=PORT
 )
 
-from decouple import config
-
-HOSTNAME = config("FLDP_HOST", "127.0.0.1")
-PORT = config("FLDP_PORT", 8000)
 
 class Client:
     """A client which trains model updates on its personal dataset for FL.
@@ -133,7 +129,6 @@ class Client:
                 coef = current_coef + Client._flat_clip(sensitivity, coef)
                 inter = current_intercept + Client._flat_clip(sensitivity, inter)
                 self._model.set_weights(coef, inter)
-
 
         # theta - theta_0
         coef, inter = self._model.get_weights()

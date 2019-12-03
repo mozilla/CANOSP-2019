@@ -290,8 +290,6 @@ class FLDPSimulationRunner(BaseSimulationRunner):
             user_id_col,
         )
 
-
-
         # TODO: maintain user contribution weights in the Clients.
         # Maybe call a method to set and return the weights on each client, and
         # accumulate them here in the weight sum.
@@ -327,14 +325,19 @@ class FLDPSimulationRunner(BaseSimulationRunner):
                     self._intercepts[-1],
                     self._num_epochs,
                     self._batch_size,
-                    self._sensitivity
+                    self._sensitivity,
                 )
 
                 client_weight = client.update_contrib_weight(self._user_weight_cap)
                 indiv_client_weights.append(client_weight)
                 self._client_contrib_weight_sum += client_weight
 
-        self.standard_dev = self._calc_standard_dev(self.noise_scale, self.sensitivity, self.user_sel_prob, self._client_contrib_weight_sum)
+        self.standard_dev = self._calc_standard_dev(
+            self.noise_scale,
+            self.sensitivity,
+            self.user_sel_prob,
+            self._client_contrib_weight_sum,
+        )
 
         new_coef, new_intercept = self._server.compute_new_weights_dp(
             self._standard_dev, self._client_contrib_weight_sum, indiv_client_weights

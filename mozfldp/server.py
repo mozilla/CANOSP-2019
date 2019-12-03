@@ -24,7 +24,7 @@ class ServerFacade:
 
     Args:
         coef: initial coefficients to initialize the server with
-        inomtercept: initial intercepts to initialize the server with
+        intercept: initial intercepts to initialize the server with
     """
 
     def __init__(self, coef, intercept):
@@ -79,7 +79,9 @@ class ServerFacade:
 
         return self._coef, self._intercept
 
-    def compute_new_weights_dp(self, standard_dev, avg_denom, indiv_client_weights, user_sel_prob):
+    def compute_new_weights_dp(
+        self, standard_dev, avg_denom, indiv_client_weights, user_sel_prob
+    ):
         """
         Applies the DP-protected federated averaging on the stored client weights
         for this round and return the new weights.
@@ -89,10 +91,14 @@ class ServerFacade:
         """
         # TODO: DP version of fed averaging.
 
-        coefs, inters = self._merge_all_user_thetas(avg_denom, indiv_client_weights, user_sel_prob)
+        coefs, inters = self._merge_all_user_thetas(
+            avg_denom, indiv_client_weights, user_sel_prob
+        )
 
         coefs += self._gen_gausian_rand_noise(standard_dev, len(self._client_coefs))
-        inters += self._gen_gausian_rand_noise(standard_dev, len(self._client_intercepts))
+        inters += self._gen_gausian_rand_noise(
+            standard_dev, len(self._client_intercepts)
+        )
 
         self._client_coefs += coefs
         self._client_intercepts += inters
@@ -100,7 +106,6 @@ class ServerFacade:
         self.reset_client_data()
 
         return self._client_coefs, self._client_intercepts
-
 
     def _gen_gausian_rand_noise(standard_dev, vec_len):
         """
@@ -131,7 +136,9 @@ class ServerFacade:
 
         for i in range(num_users_in_batch):
             weighted_user_coefs = np.multiply(self._client_coefs[i], user_weights[i])
-            weighted_user_inters = np.multiply(self._client_intercepts[i], user_weights[i])
+            weighted_user_inters = np.multiply(
+                self._client_intercepts[i], user_weights[i]
+            )
 
             merged_coefs = np.add(merged_coefs, weighted_user_coefs)
             merged_inters = np.add(merged_inters, weighted_user_inters)
@@ -141,8 +148,6 @@ class ServerFacade:
         merged_inters = np.divide(merged_inters, divisor)
 
         return merged_coefs, merged_inters
-
-
 
 
 class InvalidClientData(Exception):
