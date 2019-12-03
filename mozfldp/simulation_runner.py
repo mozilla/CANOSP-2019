@@ -130,7 +130,7 @@ class SGDSimulationRunner(BaseSimulationRunner):
     def run_simulation_round(self):
         """Perform a single round of federated learning."""
         # TODO finish implementing this
-        self._dummy_client.update_and_submit_weights(
+        self._dummy_client.submit_weight_updates(
             self._coefs[-1], self._intercepts[-1], self._num_epochs, self._batch_size
         )
 
@@ -189,7 +189,7 @@ class FLSimulationRunner(BaseSimulationRunner):
         # TODO finish implementing this. Should it return the current weights?
         for client in self._clients:
             if np.random.random_sample() < self._client_fraction:
-                client.update_and_submit_weights(
+                client.submit_weight_updates(
                     self._coefs[-1],
                     self._intercepts[-1],
                     self._num_epochs,
@@ -320,7 +320,7 @@ class FLDPSimulationRunner(BaseSimulationRunner):
 
         for client in self._clients:
             if np.random.random_sample() < self._client_fraction:
-                client.update_and_submit_weights_dp(
+                client.submit_dp_weight_updates(
                     self._coefs[-1],
                     self._intercepts[-1],
                     self._num_epochs,

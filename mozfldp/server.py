@@ -28,56 +28,58 @@ class ServerFacade:
     """
 
     def __init__(self, coef, intercept):
-        self._coef = coef
-        self._intercept = intercept
+        self._coef = np.copy(coef)
+        self._intercept = np.copy(intercept)
 
         self.reset_client_data()
 
     def reset_client_data(self):
-        self._client_coefs = []
-        self._client_intercepts = []
-        self._num_samples = []
+        self._client_coef_updates = []
+        self._client_intercept_updates = []
+        self._user_contrib_weights = []
 
     def ingest_client_data(self, client_json):
         """
-        Accepts new weights from a client and stores them on the server side for averaging
+        Accepts weight updates from a client and stores them on the server side
+        for averaging
 
         Args:
-            client_json: a json object containing coefs, intercepts, and num_samples
+            client_json: a json object containing coef_update, intercept_update,
+                and user_contrib_weights
         """
         client_json = json.loads(client_json)
-        self._client_coefs.append(client_json["coefs"])
-        self._client_intercepts.append(client_json["intercept"])
-        self._num_samples.append(client_json["num_samples"])
+        self._client_coef_updates.append(client_json["coef_update"])
+        self._client_intercept_updates.append(client_json["intercept_update"])
+        self._user_contrib_weights.append(client_json["user_contrib_weight"])
 
     def compute_new_weights(self):
         """
-        Applies the federated averaging on the stored client weights for this round
-        and return the new weights
+        Applies the federated averaging on the stored client weight updates for this round
+        and return the new weights.
         """
 
-        new_coefs = np.zeros(self._coef.shape, dtype=np.float64, order="C")
-        new_intercept = np.zeros(self._intercept.shape, dtype=np.float64, order="C")
+        final_coef_udpate = np.zeros(self._coef.shape, dtype=np.float64, order="C")
+        final_int_update = np.zeros(self._intercept.shape, dtype=np.float64, order="C")
 
-        total_samples = sum(self._num_samples)
+        print(final_coef_udpate.shape)
+        total_weight = sum(self._user_contrib_weights)
 
-        for index, (client_coef, client_intercept, n_k) in enumerate(
-            zip(self._client_coefs, self._client_intercepts, self._num_samples)
+        for (coef_update, int_update, w_k) in zip(
+            self._client_coef_updates,
+            self._client_intercept_updates,
+            self._user_contrib_weights,
         ):
-            added_coef = np.array(client_coef) * n_k / total_samples
-            added_intercept = np.array(client_intercept) * n_k / total_samples
-
-            new_coefs = np.add(new_coefs, added_coef)
-            new_intercept = np.add(new_intercept, added_intercept)
+            final_coef_udpate += np.array(coef_update) * w_k / total_weight
+            final_int_update += np.array(int_update) * w_k / total_weight
 
         # update the server weights to newly calculated weights
-        self._coef = new_coefs
-        self._intercept = new_intercept
+        self._coef += final_coef_udpate
+        self._intercept += final_int_update
 
         # reset all client data so it doesn't get used for the next round
         self.reset_client_data()
 
-        return self._coef, self._intercept
+        return np.copy(self._coef), np.copy(self._intercept)
 
     def compute_new_weights_dp(
         self, standard_dev, avg_denom, indiv_client_weights, user_sel_prob

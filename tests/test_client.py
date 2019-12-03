@@ -79,7 +79,7 @@ def batched_indices_3():
 def batched_epoch_weights(client, batch_ind, num_epochs, init_coef, init_int):
     # Simulate training for the client to get expected weights.
     model = client._model.get_clone(trained=True)
-    model.set_weights(np.copy(init_coef), np.copy(init_int))
+    model.set_weights(init_coef, init_int)
     for _ in range(num_epochs):
         for bi in batch_ind:
             model.minibatch_update(client._features[bi], client._labels[bi])
@@ -134,9 +134,11 @@ def test_update_weights(client, batched_indices_2, api_url, monkeypatch):
         init_coef=init_coefs,
         init_int=init_intercept,
     )
+    expected_coef_update = expected_coefs - init_coefs
+    expected_int_update = expected_int - init_intercept
 
     reset_random_seed()
-    url, _, json_data = client.update_and_submit_weights(
+    url, _, json_data = client.submit_weight_updates(
         current_coef=init_coefs,
         current_intercept=init_intercept,
         num_epochs=1,
@@ -145,9 +147,9 @@ def test_update_weights(client, batched_indices_2, api_url, monkeypatch):
 
     assert url == api_url
     request_data = json.loads(json_data)
-    assert request_data["num_samples"] == len(LABELS)
-    assert np.array_equal(request_data["coefs"], expected_coefs)
-    assert np.array_equal(request_data["intercept"], expected_int)
+    assert request_data["user_contrib_weight"] == len(LABELS)
+    assert np.array_equal(request_data["coef_update"], expected_coef_update)
+    assert np.array_equal(request_data["intercept_update"], expected_int_update)
 
     # Train over multiple epochs.
     expected_coefs, expected_int = batched_epoch_weights(
@@ -157,9 +159,11 @@ def test_update_weights(client, batched_indices_2, api_url, monkeypatch):
         init_coef=init_coefs,
         init_int=init_intercept,
     )
+    expected_coef_update = expected_coefs - init_coefs
+    expected_int_update = expected_int - init_intercept
 
     reset_random_seed()
-    url, _, json_data = client.update_and_submit_weights(
+    url, _, json_data = client.submit_weight_updates(
         current_coef=init_coefs,
         current_intercept=init_intercept,
         num_epochs=3,
@@ -168,9 +172,9 @@ def test_update_weights(client, batched_indices_2, api_url, monkeypatch):
 
     assert url == api_url
     request_data = json.loads(json_data)
-    assert request_data["num_samples"] == len(LABELS)
-    assert np.array_equal(request_data["coefs"], expected_coefs)
-    assert np.array_equal(request_data["intercept"], expected_int)
+    assert request_data["user_contrib_weight"] == len(LABELS)
+    assert np.array_equal(request_data["coef_update"], expected_coef_update)
+    assert np.array_equal(request_data["intercept_update"], expected_int_update)
 
 
 def test_update_weights_dp():

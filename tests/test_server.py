@@ -35,29 +35,29 @@ def test_server_initialization(server, coef, intercept):
     np.testing.assert_array_equal(server._coef, coef)
     np.testing.assert_array_equal(server._intercept, intercept)
 
-    assert len(server._client_coefs) == 0
-    assert len(server._client_intercepts) == 0
-    assert len(server._num_samples) == 0
+    assert len(server._client_coef_updates) == 0
+    assert len(server._client_intercept_updates) == 0
+    assert len(server._user_contrib_weights) == 0
 
 
-def test_injest(server, coef, intercept):
+def test_ingest(server, coef, intercept):
     # send weights from the client to the server
     payload = {
-        "coefs": coef.tolist(),
-        "intercept": intercept.tolist(),
-        "num_samples": 5,
+        "coef_update": coef.tolist(),
+        "intercept_update": intercept.tolist(),
+        "user_contrib_weight": 5,
     }
     server.ingest_client_data(json.dumps(payload))
 
     # check that the payload got injested
-    assert len(server._client_coefs) == 1
-    assert len(server._client_intercepts) == 1
-    assert len(server._num_samples) == 1
+    assert len(server._client_coef_updates) == 1
+    assert len(server._client_intercept_updates) == 1
+    assert len(server._user_contrib_weights) == 1
 
     # check if the payload is correct
-    np.testing.assert_array_equal(server._client_coefs[0], coef)
-    np.testing.assert_array_equal(server._client_intercepts[0], intercept)
-    assert server._num_samples[0] == 5
+    np.testing.assert_array_equal(server._client_coef_updates[0], coef)
+    np.testing.assert_array_equal(server._client_intercept_updates[0], intercept)
+    assert server._user_contrib_weights[0] == 5
 
 
 def test_compute_new_weights(server, coef, intercept):
@@ -74,26 +74,26 @@ def test_compute_new_weights(server, coef, intercept):
     intercept2.fill(2)
 
     # add the weights to the server storage before averaging
-    server._client_coefs.append(coef1)
-    server._client_intercepts.append(intercept1)
-    server._num_samples.append(4)
+    server._client_coef_updates.append(coef1)
+    server._client_intercept_updates.append(intercept1)
+    server._user_contrib_weights.append(4)
 
-    server._client_coefs.append(coef2)
-    server._client_intercepts.append(intercept2)
-    server._num_samples.append(6)
+    server._client_coef_updates.append(coef2)
+    server._client_intercept_updates.append(intercept2)
+    server._user_contrib_weights.append(6)
 
     new_coef, new_intercept = server.compute_new_weights()
 
     # since client 1 has 4 samples and client 2 has 6 samples, the update
     # from client 2 is weighted more - the weighted average between 1 and 2
     # is 1.6
-    expected_coef = np.copy(coef)
-    expected_intercept = np.copy(intercept)
-    expected_coef.fill(1.6)
-    expected_intercept.fill(1.6)
+    expected_coef_update = np.copy(coef)
+    expected_intercept_update = np.copy(intercept)
+    expected_coef_update.fill(1.6)
+    expected_intercept_update.fill(1.6)
 
-    np.testing.assert_array_equal(new_coef, expected_coef)
-    np.testing.assert_array_equal(new_intercept, expected_intercept)
+    np.testing.assert_array_equal(new_coef, coef + expected_coef_update)
+    np.testing.assert_array_equal(new_intercept, intercept + expected_intercept_update)
 
 
 @pytest.fixture
@@ -111,4 +111,4 @@ def test_request_compute_weights(app):
     Test that compute_new_weights returns valid JSON
     """
     result = compute_new_weights()
-    assert result == {'result': 'ok', 'weights': [[1, 2, 3], [4, 5, 6]]}
+    assert result == {"result": "ok", "weights": [[1, 2, 3], [4, 5, 6]]}
