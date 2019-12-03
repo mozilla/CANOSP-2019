@@ -14,9 +14,9 @@ import json
 
 from decouple import config
 
-HOSTNAME = config("FLDP_HOST", "127.0.0.1")
-PORT = config("FLDP_PORT", 8000)
-fake_clientId = 1
+HOSTNAME = config("FLDP_HOST", default="127.0.0.1")
+PORT = config("FLDP_PORT", default=8000)
+CLIENT_ID = 123
 
 FEATURES = [
     [6, 9, 6],
@@ -34,7 +34,6 @@ LABELS = [1, 0, 1, 0, 1, 0, 1, 0]
 SEEDED_BATCHED_2 = [[1, 5], [0, 7], [2, 4], [3, 6]]
 SEEDED_BATCHED_3 = [[1, 5, 0], [7, 2, 4], [3, 6]]
 
-
 @pytest.fixture
 def features():
     return np.array(FEATURES)
@@ -44,18 +43,26 @@ def features():
 def labels():
     return np.array(LABELS)
 
-
 @pytest.fixture
-def model():
-    return SGDModel()
+def model(labels):
+    # Turning off shuffling should be enough to make this reproducible.
+    model = SGDModel(shuffle=False)
+    model.set_training_classes(labels)
+    return model
 
 
 @pytest.fixture
 def client(features, labels, model):
     return Client(
-        client_id=fake_clientId, features=features, labels=labels, model=model
+        client_id=CLIENT_ID, features=features, labels=labels,
+        model=model.get_clone()
     )
 
+
+@pytest.fixture
+def api_url():
+    return "http://{hostname}:{port}/api/v1/ingest_client_data/{id}".format(
+            hostname=HOSTNAME, port=str(PORT), id=str(CLIENT_ID))
 
 @pytest.fixture
 def batched_indices_2():
@@ -67,10 +74,19 @@ def batched_indices_3():
     return [np.array(idx) for idx in SEEDED_BATCHED_3]
 
 
+def batched_epoch_weights(client, batch_ind, num_epochs, init_coef, init_int):
+    # Simulate training for the client to get expected weights.
+    model = client._model.get_clone(trained=True)
+    model.set_weights(np.copy(init_coef), np.copy(init_int))
+    for _ in range(num_epochs):
+        for bi in batch_ind:
+            model.minibatch_update(client._features[bi], client._labels[bi])
+    return model.get_weights()
+
+
 def reset_random_seed():
     random.seed(42)
     np.random.seed(42)
-
 
 def compare_batch_indices(actual, expected):
     assert len(actual) == len(expected)
@@ -96,74 +112,63 @@ def test_batching(client, batched_indices_2, batched_indices_3):
     compare_batch_indices(batches_size_exceed, batch_ind)
 
 
-def test_update_weights(client, monkeypatch, batched_indices_2):
+def test_update_weights(client, batched_indices_2, api_url, monkeypatch):
     # TODO: check weights and iteration counters t_, n_iter_ for correctness.
 
-    # For now, skip model updating and just record what data gets passed.
-    model_update_data = []
+    # Don't actually issue any requests, just return the contents.
+    def mock_post(url, data=None, json=None):
+        return url, data, json
 
-    def mock_model_update(X, y):
-        model_update_data.append((X, y))
+    monkeypatch.setattr("mozfldp.client.requests.post", mock_post)
+    init_coefs = np.array([29.0, 0.0, 0.0])
+    init_intercept = np.array([-9.0])
 
-    monkeypatch.setattr(client, "_run_model_update_step", mock_model_update)
-
-    # mock the post request
-    mock_post_patcher = patch("mozfldp.client.requests.post")
-    mock_post = mock_post_patcher.start()
-    mock_post.return_value.ok = True
+    # Train for a single epoch.
+    expected_coefs, expected_int = batched_epoch_weights(
+        client,
+        batch_ind=batched_indices_2,
+        num_epochs=1,
+        init_coef=init_coefs,
+        init_int=init_intercept
+    )
 
     reset_random_seed()
-    client.update_and_submit_weights(
-        current_coef=np.array([]),
-        current_intercept=np.array([]),
+    url, _, json_data = client.update_and_submit_weights(
+        current_coef=init_coefs,
+        current_intercept=init_intercept,
         num_epochs=1,
         batch_size=2,
     )
-    assert len(model_update_data) == len(batched_indices_2)
-    for (feat, lab), exp_ind in zip(model_update_data, batched_indices_2):
-        assert np.array_equal(feat, client._features[exp_ind])
-        assert np.array_equal(lab, client._labels[exp_ind])
+
+    assert url == api_url
+    request_data = json.loads(json_data)
+    assert request_data["num_samples"] == len(LABELS)
+    assert np.array_equal(request_data["coefs"], expected_coefs)
+    assert np.array_equal(request_data["intercept"], expected_int)
+
+    # Train over multiple epochs.
+    expected_coefs, expected_int = batched_epoch_weights(
+        client,
+        batch_ind=batched_indices_2,
+        num_epochs=3,
+        init_coef=init_coefs,
+        init_int=init_intercept
+    )
 
     reset_random_seed()
-    model_update_data = []
-    client.update_and_submit_weights(
-        current_coef=np.array([]),
-        current_intercept=np.array([]),
+    url, _, json_data = client.update_and_submit_weights(
+        current_coef=init_coefs,
+        current_intercept=init_intercept,
         num_epochs=3,
         batch_size=2,
     )
-    batched_ind = batched_indices_2 * 3
-    print(batched_ind)
-    assert len(model_update_data) == len(batched_ind)
-    for (feat, lab), exp_ind in zip(model_update_data, batched_ind):
-        assert np.array_equal(feat, client._features[exp_ind])
-        assert np.array_equal(lab, client._labels[exp_ind])
 
-    reset_random_seed()
-    model_update_data = []
-    coefs = np.array([29.0, 0.0, 0.0])
-    intercepts = np.array([-9.0])
-    expected_payload = {
-        "coefs": coefs.tolist(),
-        "intercept": intercepts.tolist(),
-        "num_samples": len(LABELS),
-    }
+    assert url == api_url
+    request_data = json.loads(json_data)
+    assert request_data["num_samples"] == len(LABELS)
+    assert np.array_equal(request_data["coefs"], expected_coefs)
+    assert np.array_equal(request_data["intercept"], expected_int)
 
-    expected_url = "http://{hostname:s}:{port:d}/api/v1/ingest_client_data/{id:d}".format(
-        hostname=HOSTNAME, port=PORT, id=client._id
-    )
-    response = client.update_and_submit_weights(
-        current_coef=coefs, current_intercept=intercepts, num_epochs=3, batch_size=2
-    )
-    batched_ind = batched_indices_2 * 3
-    print(batched_ind)
-    assert len(model_update_data) == len(batched_ind)
-    mock_post.assert_called_with(json=json.dumps(expected_payload), url=expected_url)
-    # test if the endpoint is called successfully
-    assert response != None
-    assert response.ok == True
-    # stop mocking the request
-    mock_post_patcher.stop()
 
 
 def test_update_weights_dp():
