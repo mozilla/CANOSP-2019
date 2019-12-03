@@ -8,7 +8,10 @@ from flask import jsonify
 import numpy as np
 import argparse
 import json
+from decouple import config
 
+HOSTNAME = config("FLDP_HOST", "127.0.0.1")
+PORT = config("FLDP_PORT", 8000)
 
 app = Flask(__name__)
 
@@ -111,7 +114,7 @@ def handle_invalid_client_data(error):
     return response
 
 
-@app.route("/api/v1/ingest_client_data", methods=["POST"])
+@app.route("/api/v1/ingest_client_data/<string:client_id>", methods=["POST"])
 def ingest_client_data(client_id):
     payload = request.get_json()
     try:
@@ -135,7 +138,7 @@ def compute_new_weights():
         )
 
 
-def flaskrun(app, default_host="0.0.0.0", default_port="8000"):
+def flaskrun(app, default_host=HOSTNAME, default_port=PORT):
     """
     Takes a flask.Flask instance and runs it. Parses
     command-line flags to configure the app.
@@ -183,4 +186,5 @@ def flaskrun(app, default_host="0.0.0.0", default_port="8000"):
 
 
 if __name__ == "__main__":
-    flaskrun(app)
+    with app.app_context():
+        flaskrun(app)

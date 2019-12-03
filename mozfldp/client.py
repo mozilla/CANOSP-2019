@@ -3,6 +3,16 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import numpy as np
+import requests
+import json
+
+from decouple import config
+
+HOSTNAME = config("FLDP_HOST", default="127.0.0.1")
+PORT = config("FLDP_PORT", default=8000)
+API_ENDPOINT_BASE = "http://{hostname:s}:{port:d}/api/v1/ingest_client_data/{{id:s}}".format(
+    hostname=HOSTNAME, port=PORT
+)
 
 
 class Client:
@@ -62,7 +72,8 @@ class Client:
         num_epochs: number of passes through the client data
         batch_size: size of data minibatch used in each weight update step
 
-        Resulting weights are submitted to the server.
+        Resulting weights are submitted to the server. Returns the server
+        response.
         """
         self._model.set_weights(np.copy(current_coef), np.copy(current_intercept))
 
@@ -73,8 +84,20 @@ class Client:
                     self._features[batch_ind], self._labels[batch_ind]
                 )
 
-        # TODO: submit new weights to the server via API request.
-        # self._model.get_weights() -> server
+        # load the client weight into json payload
+        new_coef, new_intercept = self._model.get_weights()
+        client_data = {
+            "coefs": new_coef.tolist(),
+            "intercept": new_intercept.tolist(),
+            "num_samples": self._n,
+        }
+        payload = json.dumps(client_data)
+
+        # send the post request to update the weights
+        api_endpoint = API_ENDPOINT_BASE.format(id=str(self._id))
+        response = requests.post(url=api_endpoint, json=payload)
+
+        return response
 
     def update_contrib_weight(contrib_weight_cap):
         """Set and return the contribution weight in terms of the given cap."""
