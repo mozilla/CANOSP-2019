@@ -6,13 +6,7 @@ import numpy as np
 import requests
 import json
 
-from decouple import config
-
-HOSTNAME = config("FLDP_HOST", default="127.0.0.1")
-PORT = config("FLDP_PORT", default=8000)
-API_ENDPOINT_BASE = "http://{hostname:s}:{port:d}/api/v1/ingest_client_data/{{id:s}}".format(
-    hostname=HOSTNAME, port=PORT
-)
+from mozfldp.server import client_data_url
 
 
 class Client:
@@ -107,7 +101,7 @@ class Client:
         payload = json.dumps(client_data)
 
         # send the post request to update the weights
-        api_endpoint = API_ENDPOINT_BASE.format(id=str(self._id))
+        api_endpoint = client_data_url(self._id)
         response = requests.post(url=api_endpoint, json=payload)
 
         return response

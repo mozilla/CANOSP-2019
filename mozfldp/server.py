@@ -10,10 +10,26 @@ import argparse
 import json
 from decouple import config
 
+app = Flask(__name__)
+
 HOSTNAME = config("FLDP_HOST", "127.0.0.1")
 PORT = config("FLDP_PORT", 8000)
 
-app = Flask(__name__)
+API_BASE_URL = "http://{hostname:s}:{port:d}/api/v1".format(
+    hostname=HOSTNAME, port=PORT
+)
+
+
+def client_data_url(client_id):
+    """Return the server API URL for submitting weights for the given client."""
+    return "{base_url}/ingest_client_data/{id}".format(
+        base_url=API_BASE_URL, id=client_id
+    )
+
+
+def server_weights_url():
+    """Return the server API URL for requesting aggregated weights from the server."""
+    return "{base_url}/compute_new_weights".format(base_url=API_BASE_URL)
 
 
 class ServerFacade:

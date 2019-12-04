@@ -7,7 +7,8 @@ import numpy as np
 
 from mozfldp.client import Client
 from mozfldp.model import SGDModel
-from tests.utils import HOSTNAME, PORT, reset_random_seed
+from mozfldp.server import client_data_url
+from tests.utils import reset_random_seed
 
 import json
 
@@ -57,9 +58,7 @@ def client(features, labels, model):
 
 @pytest.fixture
 def api_url():
-    return "http://{hostname}:{port}/api/v1/ingest_client_data/{id}".format(
-        hostname=HOSTNAME, port=str(PORT), id=str(CLIENT_ID)
-    )
+    return client_data_url(str(CLIENT_ID))
 
 
 @pytest.fixture
