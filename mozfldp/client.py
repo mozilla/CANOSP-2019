@@ -7,6 +7,21 @@ import numpy as np
 from mozfldp.server import submit_client_data_request
 
 
+def _flat_clip(sensitivity, *vecs):
+    """Clip vectors by scaling to a given maximum norm.
+
+    The norm is computed across all vectors, ie. applied to their
+    concatenation. Returns scaled versions of the original vectors.
+
+    sensitivity: the bound on the vector norm
+    """
+    norm = np.linalg.norm(np.concatenate(vecs, axis=None))
+    if norm > sensitivity:
+        scaling = sensitivity / norm
+        vecs = tuple([v * scaling for v in vecs])
+
+    return vecs[0] if len(vecs) == 1 else vecs
+
 class Client:
     """A client which trains model updates on its personal dataset for FL.
 
@@ -63,7 +78,7 @@ class Client:
         each batch
 
         Resulting weight updates (differences from current weights) are
-        submitted to the server. Returns the server response.
+        submitted to the server.
         """
         self._model.set_weights(current_coef, current_intercept)
 
@@ -89,14 +104,13 @@ class Client:
 
         # load the client weight into json payload
         new_coef, new_intercept = self._model.get_weights()
+
         coef_update = new_coef - current_coef
         intercept_update = new_intercept - current_intercept
 
-        response = submit_client_data_request(
+        submit_client_data_request(
             self._id, coef_update, intercept_update, self._contrib_weight
         )
-
-        return response
 
     def submit_weight_updates(
         self, current_coef, current_intercept, num_epochs, batch_size
@@ -109,9 +123,9 @@ class Client:
         batch_size: size of data minibatch used in each weight update step
 
         Resulting weight updates (differences from current weights) are
-        submitted to the server. Returns the server response.
+        submitted to the server.
         """
-        return self._submit_weight_updates(
+        self._submit_weight_updates(
             current_coef=current_coef,
             current_intercept=current_intercept,
             num_epochs=num_epochs,
@@ -144,9 +158,9 @@ class Client:
         sensitivity: the sensitivity bound on user update norms
 
         Resulting weight updates (differences from current weights) are
-        submitted to the server. Returns the server response.
+        submitted to the server.
         """
-        return self._update_and_submit_weights(
+        self._submit_weight_updates(
             current_coef=current_coef,
             current_intercept=current_intercept,
             num_epochs=num_epochs,
@@ -154,17 +168,3 @@ class Client:
             sensitivity=sensitivity,
         )
 
-    def _flat_clip(sensitivity, *vecs):
-        """Clip vectors by scaling to a given maximum norm.
-
-        The norm is computed across all vectors, ie. applied to their
-        concatenation. Returns scaled versions of the original vectors.
-
-        sensitivity: the bound on the vector norm
-        """
-        norm = np.linalg.norm(np.concatenate(vecs, axis=None))
-        if norm > sensitivity:
-            scaling = sensitivity / norm
-            vecs = tuple([v * scaling for v in vecs])
-
-        return vecs[0] if len(vecs) == 1 else vecs

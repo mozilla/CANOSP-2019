@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from mozfldp.client import Client
-from mozfldp.server import ServerFacade
+from mozfldp.server import compute_weights_request, reset_server_params_request
 
 import json
 import sys
@@ -52,7 +52,7 @@ class BaseSimulationRunner:
         label_col="label",
         user_id_col="user_id",
     ):
-        self._model = model
+        self._model = model.get_clone()
         # Make the model aware of the full set of labels (necessary for partial
         # fit updating).
         self._model.set_training_classes(training_data[label_col])
@@ -78,7 +78,11 @@ class BaseSimulationRunner:
             test_data, label_col, user_id_col
         )
 
-        self._server = ServerFacade(coef_init, intercept_init)
+    def reset_server(self, **kwargs):
+        """Reset server state prior to running this simulation."""
+        reset_server_params_request(coef=self._coefs[-1],
+                intercept=self._intercepts[-1], **kwargs)
+
 
     def run_simulation_round(self):
         """Perform a single round of model training.
@@ -195,9 +199,8 @@ class FLSimulationRunner(BaseSimulationRunner):
                     self._num_epochs,
                     self._batch_size,
                 )
-                self._submit_client_weights_temp_hack(client)
 
-        new_coef, new_intercept = self._server.compute_new_weights()
+        new_coef, new_intercept = compute_weights_request()
         self._coefs.append(new_coef)
         self._intercepts.append(new_intercept)
 
@@ -302,10 +305,6 @@ class FLDPSimulationRunner(BaseSimulationRunner):
         )
         self._avg_denom = self._client_fraction * self._user_contrib_weight_sum
 
-        self._server.reset_dp_params(
-            avg_denom=self._avg_denom, standard_dev=slef._standard_dev
-        )
-
     def _compute_privacy_budget_spent(self):
         """Compute the epsilon value representing the privacy budget spent up to now."""
         current_rdp = self._rdp * self._num_rounds_completed
@@ -313,6 +312,11 @@ class FLDPSimulationRunner(BaseSimulationRunner):
             orders=self.RDP_ORDERS, rdp=current_rdp, target_delta=self._delta
         )
         return eps
+
+    def reset_server(self, **kwargs):
+        """Reset server state prior to running this simulation."""
+        super().reset_server(avg_denom=self._avg_denom, standard_dev=self._standard_dev)
+
 
     def run_simulation_round(self):
         """Perform a single round of federated learning with DP.
@@ -331,7 +335,7 @@ class FLDPSimulationRunner(BaseSimulationRunner):
                     self._sensitivity,
                 )
 
-        new_coef, new_intercept = self._server.compute_new_weights()
+        new_coef, new_intercept = compute_weights_request()
 
         self._coefs.append(new_coef)
         self._intercepts.append(new_intercept)

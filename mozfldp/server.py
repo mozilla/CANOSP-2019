@@ -187,8 +187,8 @@ class ServerFacade:
                 and user_contrib_weights
         """
         client_json = json.loads(client_json)
-        self._client_coef_updates.append(client_json["coef_update"])
-        self._client_intercept_updates.append(client_json["intercept_update"])
+        self._client_coef_updates.append(np.array(client_json["coef_update"]))
+        self._client_intercept_updates.append(np.array(client_json["intercept_update"]))
         self._user_contrib_weights.append(client_json["user_contrib_weight"])
 
     def compute_new_weights(self):
