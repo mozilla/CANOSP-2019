@@ -210,9 +210,9 @@ class FLSimulationRunner(BaseSimulationRunner):
         """Temporary shim to submit client weights to the server."""
         coef, intercept = client._model.get_weights()
         request_dict = {
-            "coefs": coef.tolist(),
-            "intercept": intercept.tolist(),
-            "num_samples": client._n,
+            "coef_update": coef.tolist(),
+            "intercept_update": intercept.tolist(),
+            "user_contrib_weight": client._n,
         }
         request_json = json.dumps(request_dict)
         self._server.ingest_client_data(request_json)
