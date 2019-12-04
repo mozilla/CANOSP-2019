@@ -14,11 +14,15 @@ class SGDModel:
     """Wrapper around `scikit-learn`'s SGD classifier allowing for external
     updating of model weights and a modified training interface.
 
+    override_minibatch: if `True`, work around inefficiencies of `minibatch_update` by
+    using `classifier.partial_fit` directly
+
     Other kwargs supplied to the constructor are passed to the underlying
     classifier.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, override_minibatch=False, **kwargs):
+        self._override_minibatch = override_minibatch
         self.classifier = SGDClassifier(**kwargs)
 
     def set_training_classes(self, all_training_labels):
@@ -53,6 +57,7 @@ class SGDModel:
 
         new_model = self.__class__()
         new_model.classifier = new_classifier
+        new_model._override_minibatch = self._override_minibatch
         return new_model
 
     def __repr__(self):
@@ -94,6 +99,16 @@ class SGDModel:
         )
 
     def minibatch_update(self, X, y):
+        """Run a single weight update on the given minibatch.
+
+        Allow for reverting to `classifier.partial_fit`.
+        """
+        if self._override_minibatch:
+            self.classifier.partial_fit(X, y)
+        else:
+            self._minibatch_update(X, y)
+
+    def _minibatch_update(self, X, y):
         """Run a single weight update on the given minibatch.
 
         X and y should be arrays of the appropriate dimensions as required by
