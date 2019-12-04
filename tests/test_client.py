@@ -7,14 +7,10 @@ import numpy as np
 
 from mozfldp.client import Client
 from mozfldp.model import SGDModel
+from tests.utils import HOSTNAME, PORT, reset_random_seed
 
-import random
 import json
 
-from decouple import config
-
-HOSTNAME = config("FLDP_HOST", default="127.0.0.1")
-PORT = config("FLDP_PORT", default=8000)
 CLIENT_ID = 123
 
 FEATURES = [
@@ -84,11 +80,6 @@ def batched_epoch_weights(client, batch_ind, num_epochs, init_coef, init_int):
         for bi in batch_ind:
             model.minibatch_update(client._features[bi], client._labels[bi])
     return model.get_weights()
-
-
-def reset_random_seed():
-    random.seed(42)
-    np.random.seed(42)
 
 
 def compare_batch_indices(actual, expected):
