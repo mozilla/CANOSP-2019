@@ -1,8 +1,8 @@
 import json
 
 from mozfldp import random_data_gen
-from mozfldp.simulation_util import server_update
-from mozfldp.fed_avg_w_dp import run_fed_avg_with_dp, FedAvgWithDpParams
+from mozfldp.deprecated.simulation_util import server_update
+from mozfldp.deprecated.fed_avg_w_dp import run_fed_avg_with_dp, FedAvgWithDpParams
 
 import pandas as pd
 import sklearn

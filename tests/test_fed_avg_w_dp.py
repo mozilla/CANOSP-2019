@@ -6,8 +6,9 @@ import pytest
 import numpy as np
 import pandas as pd
 
-from mozfldp import fed_avg_w_dp, runner, random_data_gen
-from mozfldp.runner import Runner
+from mozfldp.deprecated import fed_avg_w_dp, runner
+from mozfldp import random_data_gen
+from mozfldp.deprecated.runner import Runner
 
 import warnings
 

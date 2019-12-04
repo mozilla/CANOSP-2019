@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import pytest
-from mozfldp.simulation_util import client_update, server_update
+from mozfldp.deprecated.simulation_util import client_update, server_update
 import numpy as np
 
 
