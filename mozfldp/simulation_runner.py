@@ -331,9 +331,7 @@ class FLDPSimulationRunner(BaseSimulationRunner):
                     self._sensitivity,
                 )
 
-        new_coef, new_intercept = self._server.compute_new_weights(
-            self._standard_dev, self._client_contrib_weight_sum, indiv_client_weights
-        )
+        new_coef, new_intercept = self._server.compute_new_weights()
 
         self._coefs.append(new_coef)
         self._intercepts.append(new_intercept)
