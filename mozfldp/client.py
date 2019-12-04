@@ -3,10 +3,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import numpy as np
-import requests
-import json
 
-from mozfldp.server import client_data_url
+from mozfldp.server import make_client_data_request
 
 
 class Client:
@@ -93,16 +91,10 @@ class Client:
         new_coef, new_intercept = self._model.get_weights()
         coef_update = new_coef - current_coef
         intercept_update = new_intercept - current_intercept
-        client_data = {
-            "coef_update": coef_update.tolist(),
-            "intercept_update": intercept_update.tolist(),
-            "user_contrib_weight": self._contrib_weight,
-        }
-        payload = json.dumps(client_data)
 
-        # send the post request to update the weights
-        api_endpoint = client_data_url(self._id)
-        response = requests.post(url=api_endpoint, json=payload)
+        response = make_client_data_request(
+            self._id, coef_update, intercept_update, self._contrib_weight
+        )
 
         return response
 

@@ -6,9 +6,11 @@ from flask import Flask
 from flask import request
 from flask import jsonify
 import numpy as np
+import requests
+from decouple import config
+
 import argparse
 import json
-from decouple import config
 
 app = Flask(__name__)
 
@@ -30,6 +32,33 @@ def client_data_url(client_id):
 def server_weights_url():
     """Return the server API URL for requesting aggregated weights from the server."""
     return "{base_url}/compute_new_weights".format(base_url=API_BASE_URL)
+
+
+def _jsonify_array(arr):
+    """Prepare a numpy array for passing to json.dump."""
+    return arr.tolist()
+
+
+def make_client_data_request(
+    client_id, coef_update, intercept_update, user_contrib_weight
+):
+    """Util for clients to wrap and submit model updates to a running server.
+
+    coef_update, intercept_update: numpy arrays containing weight updates
+    user_contrib_weight: scalar weight value
+
+    Returns the server response.
+    """
+    client_data = {
+        "coef_update": _jsonify_array(coef_update),
+        "intercept_update": _jsonify_array(intercept_update),
+        "user_contrib_weight": user_contrib_weight,
+    }
+    payload = json.dumps(client_data)
+
+    # send the post request to update the weights
+    api_endpoint = client_data_url(client_id)
+    return requests.post(url=api_endpoint, json=payload)
 
 
 class ServerFacade:

@@ -112,7 +112,7 @@ def test_update_weights(client, batched_indices_2, api_url, monkeypatch):
     def mock_post(url, data=None, json=None):
         return url, data, json
 
-    monkeypatch.setattr("mozfldp.client.requests.post", mock_post)
+    monkeypatch.setattr("mozfldp.server.requests.post", mock_post)
     init_coefs = np.array([29.0, 0.0, 0.0])
     init_intercept = np.array([-9.0])
 
