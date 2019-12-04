@@ -290,13 +290,21 @@ class FLDPSimulationRunner(BaseSimulationRunner):
             user_id_col,
         )
 
-        # TODO: maintain user contribution weights in the Clients.
-        # Maybe call a method to set and return the weights on each client, and
-        # accumulate them here in the weight sum.
-        # user_contrib_weight_sum = 0
-        # for client in self._clients:
-        #     user_contrib_weight_sum += client.update_contrib_weight(self._user_weight_cap)
-        # TODO initialize standard deviation
+        user_contrib_weight_sum = 0.0
+        for client in self._clients:
+            user_contrib_weight_sum += client.update_contrib_weight(
+                self._user_weight_cap
+            )
+        self._user_contrib_weight_sum = user_contrib_weight_sum
+
+        self._standard_dev = (self._noise_scale * self._sensitivity) / (
+            self._client_fraction * self._user_contrib_weight_sum
+        )
+        self._avg_denom = self._client_fraction * self._user_contrib_weight_sum
+
+        self._server.reset_dp_params(
+            avg_denom=self._avg_denom, standard_dev=slef._standard_dev
+        )
 
     def _compute_privacy_budget_spent(self):
         """Compute the epsilon value representing the privacy budget spent up to now."""
@@ -313,11 +321,6 @@ class FLDPSimulationRunner(BaseSimulationRunner):
         epsilon.
         """
 
-        self._client_contrib_weight_sum = 0
-
-        # _server.compute_new_weights_dp needs this, but I don't think it's a good idea to send through the json
-        indiv_client_weights = []
-
         for client in self._clients:
             if np.random.random_sample() < self._client_fraction:
                 client.submit_dp_weight_updates(
@@ -328,18 +331,7 @@ class FLDPSimulationRunner(BaseSimulationRunner):
                     self._sensitivity,
                 )
 
-                client_weight = client.update_contrib_weight(self._user_weight_cap)
-                indiv_client_weights.append(client_weight)
-                self._client_contrib_weight_sum += client_weight
-
-        self.standard_dev = self._calc_standard_dev(
-            self.noise_scale,
-            self.sensitivity,
-            self.user_sel_prob,
-            self._client_contrib_weight_sum,
-        )
-
-        new_coef, new_intercept = self._server.compute_new_weights_dp(
+        new_coef, new_intercept = self._server.compute_new_weights(
             self._standard_dev, self._client_contrib_weight_sum, indiv_client_weights
         )
 
@@ -354,10 +346,3 @@ class FLDPSimulationRunner(BaseSimulationRunner):
         self._eps.append(new_eps)
 
         return new_coef, new_intercept, new_eps
-
-    def _calc_standard_dev(self, noise_scale, sensitivity, usr_sel_prob, weight_sum):
-        """
-        Calculates the standard deviation
-        Parameters are tailored to this sim impl
-        """
-        return (self.noise_scale * self.sensitivity) / (usr_sel_prob * weight_sum)
