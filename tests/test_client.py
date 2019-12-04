@@ -105,6 +105,7 @@ def test_batching(client, batched_indices_2, batched_indices_3):
     compare_batch_indices(batches_size_exceed, batch_ind)
 
 
+@pytest.mark.skip("TODO")
 def test_update_weights(client, batched_indices_2, api_url, monkeypatch):
     # TODO: check weights and iteration counters t_, n_iter_ for correctness.
 

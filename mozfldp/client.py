@@ -4,7 +4,7 @@
 
 import numpy as np
 
-from mozfldp.server import make_client_data_request
+from mozfldp.server import submit_client_data_request
 
 
 class Client:
@@ -92,7 +92,7 @@ class Client:
         coef_update = new_coef - current_coef
         intercept_update = new_intercept - current_intercept
 
-        response = make_client_data_request(
+        response = submit_client_data_request(
             self._id, coef_update, intercept_update, self._contrib_weight
         )
 
