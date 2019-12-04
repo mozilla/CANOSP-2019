@@ -130,7 +130,7 @@ class SGDSimulationRunner(BaseSimulationRunner):
     def run_simulation_round(self):
         """Perform a single round of federated learning."""
         # TODO finish implementing this
-        self._dummy_client.update_and_submit_weights(
+        self._dummy_client.submit_weight_updates(
             self._coefs[-1], self._intercepts[-1], self._num_epochs, self._batch_size
         )
 
@@ -189,7 +189,7 @@ class FLSimulationRunner(BaseSimulationRunner):
         # TODO finish implementing this. Should it return the current weights?
         for client in self._clients:
             if np.random.random_sample() < self._client_fraction:
-                client.update_and_submit_weights(
+                client.submit_weight_updates(
                     self._coefs[-1],
                     self._intercepts[-1],
                     self._num_epochs,
@@ -290,13 +290,21 @@ class FLDPSimulationRunner(BaseSimulationRunner):
             user_id_col,
         )
 
-        # TODO: maintain user contribution weights in the Clients.
-        # Maybe call a method to set and return the weights on each client, and
-        # accumulate them here in the weight sum.
-        # user_contrib_weight_sum = 0
-        # for client in self._clients:
-        #     user_contrib_weight_sum += client.update_contrib_weight(self._user_weight_cap)
-        # TODO initialize standard deviation
+        user_contrib_weight_sum = 0.0
+        for client in self._clients:
+            user_contrib_weight_sum += client.update_contrib_weight(
+                self._user_weight_cap
+            )
+        self._user_contrib_weight_sum = user_contrib_weight_sum
+
+        self._standard_dev = (self._noise_scale * self._sensitivity) / (
+            self._client_fraction * self._user_contrib_weight_sum
+        )
+        self._avg_denom = self._client_fraction * self._user_contrib_weight_sum
+
+        self._server.reset_dp_params(
+            avg_denom=self._avg_denom, standard_dev=slef._standard_dev
+        )
 
     def _compute_privacy_budget_spent(self):
         """Compute the epsilon value representing the privacy budget spent up to now."""
@@ -312,9 +320,10 @@ class FLDPSimulationRunner(BaseSimulationRunner):
         Returns latest coefficient matrix, intercept vector, and spent privacy budget
         epsilon.
         """
+
         for client in self._clients:
             if np.random.random_sample() < self._client_fraction:
-                client.update_and_submit_weights_dp(
+                client.submit_dp_weight_updates(
                     self._coefs[-1],
                     self._intercepts[-1],
                     self._num_epochs,
@@ -322,9 +331,7 @@ class FLDPSimulationRunner(BaseSimulationRunner):
                     self._sensitivity,
                 )
 
-        new_coef, new_intercept = self._server.compute_new_weights_dp(
-            self._standard_dev, self._client_contrib_weight_sum
-        )
+        new_coef, new_intercept = self._server.compute_new_weights()
 
         self._coefs.append(new_coef)
         self._intercepts.append(new_intercept)

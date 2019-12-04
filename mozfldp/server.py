@@ -28,67 +28,89 @@ class ServerFacade:
     """
 
     def __init__(self, coef, intercept):
-        self._coef = coef
-        self._intercept = intercept
-
-        self.reset_client_data()
+        self._coef = np.copy(coef)
+        self._intercept = np.copy(intercept)
+        self._client_coef_updates = []
+        self._client_intercept_updates = []
+        self._user_contrib_weights = []
+        # DP params
+        self._avg_denom = None
+        self._standard_dev = None
 
     def reset_client_data(self):
-        self._client_coefs = []
-        self._client_intercepts = []
-        self._num_samples = []
+        self._client_coef_updates.clear()
+        self._client_intercept_updates.clear()
+        self._user_contrib_weights.clear()
+
+    def reset_dp_params(self, avg_denom=None, standard_dev=None):
+        """Update the parameters used for Fed Averaging with DP.
+
+        Call with no arguments to clear previous DP parameters.
+        """
+        self._avg_denom = avg_denom
+        self._standard_dev = standard_dev
 
     def ingest_client_data(self, client_json):
         """
-        Accepts new weights from a client and stores them on the server side for averaging
+        Accepts weight updates from a client and stores them on the server side
+        for averaging
 
         Args:
-            client_json: a json object containing coefs, intercepts, and num_samples
+            client_json: a json object containing coef_update, intercept_update,
+                and user_contrib_weights
         """
         client_json = json.loads(client_json)
-        self._client_coefs.append(client_json["coefs"])
-        self._client_intercepts.append(client_json["intercept"])
-        self._num_samples.append(client_json["num_samples"])
+        self._client_coef_updates.append(client_json["coef_update"])
+        self._client_intercept_updates.append(client_json["intercept_update"])
+        self._user_contrib_weights.append(client_json["user_contrib_weight"])
 
     def compute_new_weights(self):
+        """Apply Federated Averaging on the stored client weight updates.
+
+        DP protection is applied if the necessary DP parameters are available.
+
+        Returns the new model weights.
         """
-        Applies the federated averaging on the stored client weights for this round
-        and return the new weights
-        """
 
-        new_coefs = np.zeros(self._coef.shape, dtype=np.float64, order="C")
-        new_intercept = np.zeros(self._intercept.shape, dtype=np.float64, order="C")
+        final_coef_udpate = np.zeros(self._coef.shape, dtype=np.float64, order="C")
+        final_int_update = np.zeros(self._intercept.shape, dtype=np.float64, order="C")
 
-        total_samples = sum(self._num_samples)
+        avg_denom = self._avg_denom
+        if avg_denom is None:
+            avg_denom = sum(self._user_contrib_weights)
 
-        for index, (client_coef, client_intercept, n_k) in enumerate(
-            zip(self._client_coefs, self._client_intercepts, self._num_samples)
+        for (coef_update, int_update, w_k) in zip(
+            self._client_coef_updates,
+            self._client_intercept_updates,
+            self._user_contrib_weights,
         ):
-            added_coef = np.array(client_coef) * n_k / total_samples
-            added_intercept = np.array(client_intercept) * n_k / total_samples
-
-            new_coefs = np.add(new_coefs, added_coef)
-            new_intercept = np.add(new_intercept, added_intercept)
+            final_coef_udpate += np.array(coef_update) * w_k
+            final_int_update += np.array(int_update) * w_k
 
         # update the server weights to newly calculated weights
-        self._coef = new_coefs
-        self._intercept = new_intercept
+        self._coef += final_coef_udpate / avg_denom
+        self._intercept += final_int_update / avg_denom
+
+        # add noise if required
+        # this only modifies the weights if self._standard_dev is set.
+        self._coef = self._add_gaussian_noise(self._coef)
+        self._intercept = self._add_gaussian_noise(self._intercept)
 
         # reset all client data so it doesn't get used for the next round
         self.reset_client_data()
 
-        return self._coef, self._intercept
+        return np.copy(self._coef), np.copy(self._intercept)
 
-    def compute_new_weights_dp(self, standard_dev, avg_denom):
-        """
-        Applies the DP-protected federated averaging on the stored client weights
-        for this round and return the new weights.
+    def _add_gaussian_noise(self, arr):
+        """Add independent Gaussian random noise to each element of an array.
 
-        standard_dev: the standard deviation of the random noise to apply
-        avg_denom: the denominator to use in computing the average
+        Noise uses the current instance-level standard deviation value. If none
+        is set, the array is returned unchanged.
         """
-        # TODO: DP version of fed averaging.
-        pass
+        if self._standard_dev is None:
+            return arr
+
+        return arr + np.random.normal(loc=0.0, scale=self._standard_dev, size=arr.shape)
 
 
 class InvalidClientData(Exception):

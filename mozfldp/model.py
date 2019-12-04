@@ -58,24 +58,39 @@ class SGDModel:
     def __repr__(self):
         return "SGDModel(\n{}\n)".format(self.classifier.__repr__())
 
-    def set_weights(self, coef, intercept):
+    def set_weights(self, coef, intercept, copy=True):
         """Update the current model weights.
+
+        copy: supply copies of the given arrays to the underlying classifier.
 
         Note that this leaves the iteration counters as-is. These are used
         internally in computing an adaptive learning rate.
         """
+        if copy:
+            coef = np.copy(coef)
+            intercept = np.copy(intercept)
+
         self.classifier.coef_ = coef
         self.classifier.intercept_ = intercept
 
-    def get_weights(self):
+    def get_weights(self, copy=True):
         """Return the current model weights as (coef, intercept).
+
+        copy: return copies of the weights.
 
         If either weight component is not present (ie. the model has not been
         initialized or trained), it will be None.
         """
+
+        def get_attr_from_classifier(attr, copy):
+            x = getattr(self.classifier, attr, None)
+            if x is not None and copy:
+                x = np.copy(x)
+            return x
+
         return (
-            getattr(self.classifier, "coef_", None),
-            getattr(self.classifier, "intercept_", None),
+            get_attr_from_classifier("coef_", copy=copy),
+            get_attr_from_classifier("intercept_", copy=copy),
         )
 
     def minibatch_update(self, X, y):
