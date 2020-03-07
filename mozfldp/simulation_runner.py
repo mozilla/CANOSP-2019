@@ -190,15 +190,29 @@ class FLSimulationRunner(BaseSimulationRunner):
 
     def run_simulation_round(self):
         """Perform a single round of federated learning."""
-        # TODO finish implementing this. Should it return the current weights?
-        for client in self._clients:
-            if np.random.random_sample() < self._client_fraction:
-                client.submit_weight_updates(
-                    self._coefs[-1],
-                    self._intercepts[-1],
-                    self._num_epochs,
-                    self._batch_size,
-                )
+        n_clients = len(self._clients)
+        shuffled_client_idx = np.random.permutation(n_clients)
+        if self._client_fraction == 0:
+            num_selected_clients = 1
+        elif self._client_fraction == 1:
+            num_selected_clients = n_clients
+        else:
+            num_selected_clients = int(n_clients * self._client_fraction)
+            if num_selected_clients < 1:
+                num_selected_clients = 1
+            elif num_selected_clients > n_clients:
+                num_selected_clients = n_clients
+        selected_client_idx = shuffled_client_idx[:num_selected_clients]
+        for i in selected_client_idx:
+            client = self._clients[i]
+        # for client in self._clients:
+        #     if np.random.random_sample() < self._client_fraction:
+            client.submit_weight_updates(
+                self._coefs[-1],
+                self._intercepts[-1],
+                self._num_epochs,
+                self._batch_size,
+            )
 
         new_coef, new_intercept = compute_weights_request()
         self._coefs.append(new_coef)
@@ -208,17 +222,6 @@ class FLSimulationRunner(BaseSimulationRunner):
         self._num_rounds_completed += 1
 
         return new_coef, new_intercept
-
-    def _submit_client_weights_temp_hack(self, client):
-        """Temporary shim to submit client weights to the server."""
-        coef, intercept = client._model.get_weights()
-        request_dict = {
-            "coef_update": coef.tolist(),
-            "intercept_update": intercept.tolist(),
-            "user_contrib_weight": client._n,
-        }
-        request_json = json.dumps(request_dict)
-        self._server.ingest_client_data(request_json)
 
 
 class FLDPSimulationRunner(BaseSimulationRunner):
@@ -325,15 +328,30 @@ class FLDPSimulationRunner(BaseSimulationRunner):
         epsilon.
         """
 
-        for client in self._clients:
-            if np.random.random_sample() < self._client_fraction:
-                client.submit_dp_weight_updates(
-                    self._coefs[-1],
-                    self._intercepts[-1],
-                    self._num_epochs,
-                    self._batch_size,
-                    self._sensitivity,
-                )
+        n_clients = len(self._clients)
+        shuffled_client_idx = np.random.permutation(n_clients)
+        if self._client_fraction == 0:
+            num_selected_clients = 1
+        elif self._client_fraction == 1:
+            num_selected_clients = n_clients
+        else:
+            num_selected_clients = int(n_clients * self._client_fraction)
+            if num_selected_clients < 1:
+                num_selected_clients = 1
+            elif num_selected_clients > n_clients:
+                num_selected_clients = n_clients
+        selected_client_idx = shuffled_client_idx[:num_selected_clients]
+        for i in selected_client_idx:
+            client = self._clients[i]
+        # for client in self._clients:
+        #     if np.random.random_sample() < self._client_fraction:
+            client.submit_dp_weight_updates(
+                self._coefs[-1],
+                self._intercepts[-1],
+                self._num_epochs,
+                self._batch_size,
+                self._sensitivity,
+            )
 
         new_coef, new_intercept = compute_weights_request()
 
