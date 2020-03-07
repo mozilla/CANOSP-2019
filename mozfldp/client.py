@@ -59,6 +59,8 @@ class Client:
         index lists for each batch.
         """
         shuffled_ind = np.random.permutation(self._n)
+        if batch_size is None:
+            return [shuffled_ind]
         return [shuffled_ind[i : i + batch_size] for i in range(0, self._n, batch_size)]
 
     def _run_model_update_step(self, X, y):
@@ -74,6 +76,7 @@ class Client:
         current_intercept: current model intercept to start from
         num_epochs: number of passes through the client data
         batch_size: size of data minibatch used in each weight update step
+            (`None` means treating the entire dataset as a single batch)
         sensitivity: the sensitivity (norm) bound on the weights update from
         each batch
 
