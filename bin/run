@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+_activate_conda_env () {
+    . /opt/conda/etc/profile.d/conda.sh && conda activate mozfldp
+}
+
+
+case $1 in
+    web)
+        _activate_conda_env && python -m mozfldp.server
+    ;;
+    test)
+        _activate_conda_env && pytest /app
+        ;;
+esac

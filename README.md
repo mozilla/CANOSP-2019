@@ -2,51 +2,64 @@
 
 # CANOSP-2019
 
-This project implements a minimal server that implements federated
-learning and accepts messages from clients.
-
-## Setting up the test environment
+This project implements a minimal server that can perform federated learning
+with differential privacy and accepts messages from clients.
 
 
-* Install Python 3.6 or higher
-* Setup your virtual environment `python3 -m venv venv`
-* Install your dependencies `pip install -r requirements.txt`
+## Getting Started
+
+We are using Miniconda to manage the environment. It can be installed using one
+of the installers available [here](https://docs.conda.io/en/latest/miniconda.html).
+For MacOS, the bash installer is recommended.
+
+Make sure to have `conda init` run during conda installation so that
+your PATH is set properly.
 
 
-## Building a release
+## Installing locally to run tests
 
-* `python setup.py sdist`
+To install and run the tests for this project you can run:
 
+```bash
+# Set up the environment.
+$ make setup_conda
+$ conda activate mozfldp
 
-## Build Requirements
-
-* docker-ce : https://docs.docker.com/install/
-
-
-## Build Instructions
-
-Once you have docker-ce installed, you should be able to build this
-project using either GNUMake or you can use docker directly.
-
-
-Build the docker image using:
-
-```
-docker build . -t mozfldp:latest
+# Run tests
+$ make pytest
 ```
 
 ## Running the server
 
-You can run the server locally serving requests on port 8000 using:
+You can run the server locally, serving requests on port 8000, using:
 
-```
-python -m mozfldp.server
+```bash
+$ python -m mozfldp.server
 ```
 
-Alternately, you can run the service in a container using :
+## Building a release
 
+```bash
+python setup.py sdist
 ```
-	docker run -dit -p 127.0.0.1:8090:8000 --name mozfldp -t --rm mozfldp:latest -m mozfldp.server
+
+
+## Running from Docker
+
+The server can also be built and run as a Docker container. 
+First, install [Docker](https://docs.docker.com/get-docker/).
+
+Once you have Docker installed, you can build the container and run tests using:
+
+```bash
+$ make build_image
+$ make docker_tests
+```
+
+To run the service in the container, use:
+
+```bash
+$ make up
 ```
 
 Note that in the above command, we are exposing the container's port
@@ -60,13 +73,11 @@ You can submit arbitrary JSON blobs to the server using HTTP POST.
 
 A sample curl invocation that will work is:
 
-Note the port `8090` below.
-
-If you are running native locally -the port will be 8000.  Port 8090
-is used if you are running in a docker container.
-
-```
+```bash
 curl -X POST http://127.0.0.1:8000/api/v1/compute_new_weights
 
 {"result":"ok","weights":[[[0.0,0.0,0.0,.... }
 ```
+
+Note: If you are running locally, the port will be 8000. Port 8090 is used if you are running in a docker container.
+

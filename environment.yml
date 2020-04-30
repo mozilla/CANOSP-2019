@@ -1,0 +1,21 @@
+name: mozfldp
+channels:
+  - conda-forge
+dependencies:
+  - flake8=3.7.9
+  - flask=1.1.2
+  - ipykernel=5.2.1
+  - numpy=1.18.1
+  - pandas=1.0.1
+  - pip=20.0.2
+  - pytest=5.3.5
+  - python-decouple=3.2
+  - python=3.7.6
+  - requests=2.23.0
+  - scikit-learn=0.21.3
+  - scipy=1.4.1
+  - setuptools=45.1.0
+  - sniffio=1.1.0
+  - pip:
+    - plotnine==0.6.0
+    - tensorflow-privacy==0.2.2
