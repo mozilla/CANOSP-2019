@@ -168,5 +168,6 @@ def test_update_weights(client, batched_indices_2, api_url, monkeypatch):
     assert np.array_equal(request_data["intercept_update"], expected_int_update)
 
 
+@pytest.mark.skip("TODO")
 def test_update_weights_dp():
     pass
