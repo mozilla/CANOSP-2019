@@ -128,7 +128,7 @@ def dump_server_state_request():
             np.array(x) for x in payload["client_intercept_updates"]
         ]
         return payload
-    except Exception as exc:
+    except Exception:
         raise ServerRequestError("Error retrieving server state", response)
 
 

@@ -22,6 +22,7 @@ def _flat_clip(sensitivity, *vecs):
 
     return vecs[0] if len(vecs) == 1 else vecs
 
+
 class Client:
     """A client which trains model updates on its personal dataset for FL.
 
@@ -170,4 +171,3 @@ class Client:
             batch_size=batch_size,
             sensitivity=sensitivity,
         )
-

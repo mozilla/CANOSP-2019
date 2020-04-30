@@ -68,8 +68,3 @@ def test_server_update():
 
     assert new_coefs == expected_coefs
     assert new_intercepts == expected_intercepts
-
-
-@pytest.mark.skip("some reason goes here")
-def test_some_known_bug_but_we_want_to_skip_the_test():
-    raise StandardError("some message here")

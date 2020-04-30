@@ -5,14 +5,13 @@
 from mozfldp.client import Client
 from mozfldp.server import compute_weights_request, reset_server_params_request
 
-import json
 import sys
 
 # Flag to drop dependencies on the rest of TensorFlow.
 sys.skip_tf_privacy_import = True
 
-import numpy as np
-from tensorflow_privacy.privacy.analysis import rdp_accountant
+from tensorflow_privacy.privacy.analysis import rdp_accountant  # noqa: E402
+import numpy as np  # noqa: E402
 
 
 def _format_data_for_model(dataset, label_col, user_id_col):
@@ -80,9 +79,9 @@ class BaseSimulationRunner:
 
     def reset_server(self, **kwargs):
         """Reset server state prior to running this simulation."""
-        reset_server_params_request(coef=self._coefs[-1],
-                intercept=self._intercepts[-1], **kwargs)
-
+        reset_server_params_request(
+            coef=self._coefs[-1], intercept=self._intercepts[-1], **kwargs
+        )
 
     def run_simulation_round(self):
         """Perform a single round of model training.
@@ -205,8 +204,6 @@ class FLSimulationRunner(BaseSimulationRunner):
         selected_client_idx = shuffled_client_idx[:num_selected_clients]
         for i in selected_client_idx:
             client = self._clients[i]
-        # for client in self._clients:
-        #     if np.random.random_sample() < self._client_fraction:
             client.submit_weight_updates(
                 self._coefs[-1],
                 self._intercepts[-1],
@@ -320,7 +317,6 @@ class FLDPSimulationRunner(BaseSimulationRunner):
         """Reset server state prior to running this simulation."""
         super().reset_server(avg_denom=self._avg_denom, standard_dev=self._standard_dev)
 
-
     def run_simulation_round(self):
         """Perform a single round of federated learning with DP.
 
@@ -343,8 +339,6 @@ class FLDPSimulationRunner(BaseSimulationRunner):
         selected_client_idx = shuffled_client_idx[:num_selected_clients]
         for i in selected_client_idx:
             client = self._clients[i]
-        # for client in self._clients:
-        #     if np.random.random_sample() < self._client_fraction:
             client.submit_dp_weight_updates(
                 self._coefs[-1],
                 self._intercepts[-1],
