@@ -1,4 +1,4 @@
-.PHONY: upload_pypi tests image up stop
+.PHONY: upload_pypi tests image up stop setup_conda lint pytest
 
 image:
 	# Build the docker image
@@ -7,8 +7,18 @@ image:
 upload_pypi:
 	twine upload --repository-url https://upload.pypi.org/legacy/ dist/*
 
+setup_conda:
+	# Install dependencies
+	conda env update -n mozfldp -f environment.yml
+
+pytest: lint
+	pytest
+
 tests:
 	python setup.py pytest
+
+lint:
+	flake8 mozfldp tests
 
 docker_tests:
 	docker run -it -p 127.0.0.1:8090:8000 --name mozfldp -t --rm mozfldp:latest setup.py pytest
