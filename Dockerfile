@@ -1,4 +1,4 @@
-FROM python:3.6.9-buster
+FROM continuumio/miniconda3
 ENV PYTHONDONTWRITEBYTECODE 1
 
 MAINTAINER Victor Ng <vng@mozilla.com>
@@ -9,15 +9,13 @@ RUN apt-get update && \
 
 WORKDIR /app
 
-# Upgrade pip
-RUN pip install --upgrade pip
-
-# First copy requirements.txt so we can take advantage of docker
-# caching.
-COPY requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
-
+# First copy config files so we can take advantage of docker caching.
 COPY . /app
-RUN python setup.py install
 
-ENTRYPOINT ["/usr/local/bin/python"]
+RUN make setup_conda
+
+RUN . /opt/conda/etc/profile.d/conda.sh && \
+    conda activate mozfldp && \
+    python setup.py install
+
+ENTRYPOINT ["/bin/bash", "/app/bin/run"]

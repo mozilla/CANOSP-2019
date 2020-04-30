@@ -3,16 +3,24 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import numpy as np
-import requests
-import json
 
-from decouple import config
+from mozfldp.server import submit_client_data_request
 
-HOSTNAME = config("FLDP_HOST", default="127.0.0.1")
-PORT = config("FLDP_PORT", default=8000)
-API_ENDPOINT_BASE = "http://{hostname:s}:{port:d}/api/v1/ingest_client_data/{{id:s}}".format(
-    hostname=HOSTNAME, port=PORT
-)
+
+def _flat_clip(sensitivity, *vecs):
+    """Clip vectors by scaling to a given maximum norm.
+
+    The norm is computed across all vectors, ie. applied to their
+    concatenation. Returns scaled versions of the original vectors.
+
+    sensitivity: the bound on the vector norm
+    """
+    norm = np.linalg.norm(np.concatenate(vecs, axis=None))
+    if norm > sensitivity:
+        scaling = sensitivity / norm
+        vecs = tuple([v * scaling for v in vecs])
+
+    return vecs[0] if len(vecs) == 1 else vecs
 
 
 class Client:
@@ -52,6 +60,8 @@ class Client:
         index lists for each batch.
         """
         shuffled_ind = np.random.permutation(self._n)
+        if batch_size is None:
+            return [shuffled_ind]
         return [shuffled_ind[i : i + batch_size] for i in range(0, self._n, batch_size)]
 
     def _run_model_update_step(self, X, y):
@@ -67,11 +77,12 @@ class Client:
         current_intercept: current model intercept to start from
         num_epochs: number of passes through the client data
         batch_size: size of data minibatch used in each weight update step
+            (`None` means treating the entire dataset as a single batch)
         sensitivity: the sensitivity (norm) bound on the weights update from
         each batch
 
         Resulting weight updates (differences from current weights) are
-        submitted to the server. Returns the server response.
+        submitted to the server.
         """
         self._model.set_weights(current_coef, current_intercept)
 
@@ -97,20 +108,13 @@ class Client:
 
         # load the client weight into json payload
         new_coef, new_intercept = self._model.get_weights()
+
         coef_update = new_coef - current_coef
         intercept_update = new_intercept - current_intercept
-        client_data = {
-            "coef_update": coef_update.tolist(),
-            "intercept_update": intercept_update.tolist(),
-            "user_contrib_weight": self._contrib_weight,
-        }
-        payload = json.dumps(client_data)
 
-        # send the post request to update the weights
-        api_endpoint = API_ENDPOINT_BASE.format(id=str(self._id))
-        response = requests.post(url=api_endpoint, json=payload)
-
-        return response
+        submit_client_data_request(
+            self._id, coef_update, intercept_update, self._contrib_weight
+        )
 
     def submit_weight_updates(
         self, current_coef, current_intercept, num_epochs, batch_size
@@ -123,9 +127,9 @@ class Client:
         batch_size: size of data minibatch used in each weight update step
 
         Resulting weight updates (differences from current weights) are
-        submitted to the server. Returns the server response.
+        submitted to the server.
         """
-        return self._submit_weight_updates(
+        self._submit_weight_updates(
             current_coef=current_coef,
             current_intercept=current_intercept,
             num_epochs=num_epochs,
@@ -158,27 +162,12 @@ class Client:
         sensitivity: the sensitivity bound on user update norms
 
         Resulting weight updates (differences from current weights) are
-        submitted to the server. Returns the server response.
+        submitted to the server.
         """
-        return self._update_and_submit_weights(
+        self._submit_weight_updates(
             current_coef=current_coef,
             current_intercept=current_intercept,
             num_epochs=num_epochs,
             batch_size=batch_size,
             sensitivity=sensitivity,
         )
-
-    def _flat_clip(sensitivity, *vecs):
-        """Clip vectors by scaling to a given maximum norm.
-
-        The norm is computed across all vectors, ie. applied to their
-        concatenation. Returns scaled versions of the original vectors.
-
-        sensitivity: the bound on the vector norm
-        """
-        norm = np.linalg.norm(np.concatenate(vecs, axis=None))
-        if norm > sensitivity:
-            scaling = sensitivity / norm
-            vecs = tuple([v * scaling for v in vecs])
-
-        return vecs[0] if len(vecs) == 1 else vecs
